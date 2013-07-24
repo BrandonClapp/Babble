@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace ClientInterface
+namespace Client
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -27,10 +27,12 @@ namespace ClientInterface
 
         private void NewConnection_Click(object sender, RoutedEventArgs e)
         {
-            AddActivity("Connecting");
+            // open new window for input information
+            NewConnectionWindow ncw = new NewConnectionWindow();
+            ncw.Show();
         }
 
-        private void AddActivity(string s)
+        public void AddActivity(string s)
         {
             ActivityTextBox.Text += "\n" + s;
         }

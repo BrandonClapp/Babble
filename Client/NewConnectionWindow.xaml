@@ -1,0 +1,13 @@
+﻿<Window x:Name="NewConnectionWindow1" x:Class="Client.NewConnectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="New Connection" Height="195" Width="267">
+    <Grid>
+        <TextBox x:Name="HostTextBox" HorizontalAlignment="Left" Height="23" Margin="93,37,0,0" TextWrapping="Wrap" Text="127.0.0.1" VerticalAlignment="Top" Width="120"/>
+        <Label x:Name="HostLabel" Content="Host / IP:" HorizontalAlignment="Left" Margin="30,34,0,0" VerticalAlignment="Top"/>
+        <Label x:Name="PortLabel" Content="Port:" HorizontalAlignment="Left" Margin="53,65,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="PortTextBox" HorizontalAlignment="Left" Height="23" Margin="93,69,0,0" TextWrapping="Wrap" Text="8888" VerticalAlignment="Top" Width="120"/>
+        <Button Content="Connect" HorizontalAlignment="Left" Margin="138,106,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+
+    </Grid>
+</Window>
