@@ -37,5 +37,11 @@ namespace Client
             
         }
 
+        private void LoginAsAnonymous_Click(object sender, RoutedEventArgs e)
+        {
+            this.UsernameTextBox.IsEnabled = !LoginAsAnonymousCheckBox.IsChecked.Value;
+            this.PasswordBox.IsEnabled = !LoginAsAnonymousCheckBox.IsChecked.Value;
+        }
+
     }
 }
