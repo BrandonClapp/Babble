@@ -7,7 +7,7 @@
         <Label x:Name="HostLabel" Content="Host / IP:" HorizontalAlignment="Left" Margin="30,34,0,0" VerticalAlignment="Top"/>
         <Label x:Name="PortLabel" Content="Port:" HorizontalAlignment="Left" Margin="53,65,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="PortTextBox" HorizontalAlignment="Left" Height="23" Margin="93,69,0,0" TextWrapping="Wrap" Text="8888" VerticalAlignment="Top" Width="120"/>
-        <Button Content="Connect" HorizontalAlignment="Left" Margin="138,106,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+        <Button Content="Connect" HorizontalAlignment="Left" Margin="138,106,0,0" VerticalAlignment="Top" Width="75" IsDefault="True" Click="Button_Click"/>
 
     </Grid>
 </Window>

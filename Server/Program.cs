@@ -13,31 +13,39 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            List<TcpClient> clientList = new List<TcpClient>();
+            List<TcpClient> clientsList = new List<TcpClient>();
 
             TcpListener listener = new TcpListener(IPAddress.Any, 8888);
             listener.Start();
             while (true)
             {
                 TcpClient client = listener.AcceptTcpClient();
-                clientList.Add(client);
+                Console.WriteLine("User Connected");
+                clientsList.Add(client);
                 new Thread(() =>
+                {
+                    try
                     {
-                        try
+                        byte[] buff = new byte[1646];
+
+                        // while client is connected
+                        for (int i; (i = client.GetStream().Read(buff, 0, buff.Length)) > 0; )
                         {
-                            Console.WriteLine("User Connected");
-                            while (true)
+                            foreach (TcpClient c in clientsList)
                             {
-                                // send each clients stream to every other client in clientList.
-                                // ping user with packet every so often to make sure they're still online
+                                if (c == client) continue;
+                                c.GetStream().Write(buff, 0, buff.Length);
+                                c.GetStream().Flush();
                             }
                         }
-                        catch
-                        {
-                            clientList.Remove(client);
-                            Console.WriteLine("User Disconnected");
-                        }
-                    }).Start();
+                    }
+                    catch { }
+
+                    clientsList.Remove(client);
+                    client.Close();
+                    Console.WriteLine("User Disconnected");
+
+                }).Start();
             }
         }
     }
