@@ -33,39 +33,15 @@ namespace Server
                     User user = new User { Client = listener.AcceptTcpClient(), Buffer = new byte[1646] };
                     Console.WriteLine("User Connected");
 
-                    if (!AcceptAnonymousLogins)
-                    {
-                        // Check credentials with database.
-                        if (false) // if credentials are not valid
-                        {
-                            user.Client.Close();
-                            continue;
-                        }
-                    }
-
                     UserList.Add(user);
-                    user.Client.GetStream().BeginRead(user.Buffer, 0, user.Buffer.Length, new AsyncCallback(ClientRecieved), user);
-
-
+                    user.Client.GetStream().BeginRead(user.Buffer, 0, user.Buffer.Length, ClientDataRecieved, user);
                 }
-
             }
 
-            private void ClientRecieved(IAsyncResult iar)
+
+            private void ClientDataRecieved(IAsyncResult iar)
             {
                 User user = iar.AsyncState as User;
-
-
-
-                //bool IsYouConnectionBroken =
-                //user.Client.Client.Poll(1, SelectMode.SelectWrite) &&
-                //user.Client.Client.Poll(1, SelectMode.SelectRead) && 
-                //!user.Client.Client.Poll(1, SelectMode.SelectError);
-
-                Console.WriteLine(user.Client.Client.Poll(1, SelectMode.SelectWrite | SelectMode.SelectRead | SelectMode.SelectError));
-
-                //Console.WriteLine(IsYouConnectionBroken);
-                List<User> baddies = new List<User>();
 
                 foreach (User u in UserList)
                 {
@@ -75,17 +51,16 @@ namespace Server
                         u.Client.GetStream().Write(user.Buffer, 0, user.Buffer.Length);
                         u.Client.GetStream().Flush();
                     }
-                    catch
-                    {
-                        baddies.Add(u);
-                        u.Client.Close();
-                        Console.WriteLine("User Disconnected");
-                    }
+                    catch { }
                 }
 
-                UserList = UserList.Except(baddies).ToList();
-
-                user.Client.GetStream().BeginRead(user.Buffer, 0, user.Buffer.Length, new AsyncCallback(ClientRecieved), user);
+                if (user.IsDisconnected)
+                {
+                    UserList.Remove(user);
+                    user.Disconnect();
+                    Console.WriteLine("User Disconnected");
+                }
+                else user.Client.GetStream().BeginRead(user.Buffer, 0, user.Buffer.Length, new AsyncCallback(ClientDataRecieved), user);
             }
         }
 
@@ -93,6 +68,29 @@ namespace Server
         {
             public TcpClient Client { get; set; }
             public byte[] Buffer { get; set; }
+            public bool IsDisconnected
+            {
+                get
+                {
+                    try
+                    {
+                        return (Client.Client.Poll(0, SelectMode.SelectRead)
+                          && Client.Client.Receive(new byte[1], SocketFlags.Peek) == 0);
+                    }
+                    catch (SocketException se)
+                    {
+                        return true;
+                    }
+                }
+            }
+            public void Disconnect()
+            {
+                if (this.Client.Connected)
+                {
+                    this.Client.GetStream().Close();
+                    this.Client.Close();
+                }
+            }
         }
     }
 }

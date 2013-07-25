@@ -62,6 +62,7 @@ namespace Client
                     AddActivity("Connected");
                     ThreadStart ts = new ThreadStart(GetStream);
                     Thread thread = new Thread(ts);
+                    thread.IsBackground = true;
                     thread.Start();
                     Transmit();
                 }
