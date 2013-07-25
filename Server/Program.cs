@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Server
 {
@@ -33,6 +34,11 @@ namespace Server
                     User user = new User { Client = listener.AcceptTcpClient(), Buffer = new byte[1646] };
                     Console.WriteLine("User Connected");
 
+                    if (!AcceptAnonymousLogins)
+                    {
+                        
+                    }
+
                     UserList.Add(user);
                     user.Client.GetStream().BeginRead(user.Buffer, 0, user.Buffer.Length, ClientDataRecieved, user);
                 }
@@ -40,6 +46,16 @@ namespace Server
 
 
             private void ClientDataRecieved(IAsyncResult iar)
+            {
+                VoiceDataRecieved(iar);
+            }
+
+            private void CredentialDataRecieved(IAsyncResult iar)
+            {
+                
+            }
+
+            private void VoiceDataRecieved(IAsyncResult iar)
             {
                 User user = iar.AsyncState as User;
 
@@ -68,6 +84,10 @@ namespace Server
         {
             public TcpClient Client { get; set; }
             public byte[] Buffer { get; set; }
+
+            public string Username { get; set; }
+            public string Password { get; set; }
+
             public bool IsDisconnected
             {
                 get
