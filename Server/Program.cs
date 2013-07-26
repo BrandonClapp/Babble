@@ -26,6 +26,7 @@ namespace Server
         public int Port = 8888;
         public IPAddress IPAddress = IPAddress.Any;
         public List<User> UserList = new List<User>();
+        public int Counter = 0;
 
         public void Start()
         {
@@ -73,7 +74,7 @@ namespace Server
 
                     dynamic message = JsonConvert.DeserializeObject<dynamic>(json);
 
-                    Console.WriteLine(message.Type);
+                    Console.WriteLine(message.Type + " - " + Counter++);
                     switch (message.Type.Value as string)
                     {
                         case "Chat":
