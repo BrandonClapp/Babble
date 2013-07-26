@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Server
 {
@@ -41,7 +42,7 @@ namespace Server
                 }
 
                 UserList.Add(user);
-                user.Client.GetStream().BeginRead(user.Buffer, 0, user.Buffer.Length, ClientDataRecieved, user);
+                user.Client.GetStream().BeginRead(user.Buffer, user.Offset, user.Buffer.Length, ClientDataRecieved, user);
             }
         }
 
@@ -58,43 +59,57 @@ namespace Server
                 return;
             }
 
-            string json = UTF8Encoding.UTF8.GetString(user.Buffer).Trim('\0');
-            //Console.WriteLine(json + " - " + json.Length);
-            //dynamic message = JsonConvert.DeserializeObject<dynamic>(json);
+            user.Offset += user.Client.GetStream().EndRead(iar);
+            try
+            {
+                while (user.Offset >= BitConverter.ToUInt16(user.Buffer, 0) + 2)
+                {
+                    ushort messageLength = BitConverter.ToUInt16(user.Buffer, 0);
 
-            //switch (message.Type as string)
-            //{
-            //    case "Chat":
-            //        BroadcastData(user, json, true);
-            //        break;
-            //    case "Voice":
-            //        BroadcastData(user, json, false);
-            //        break;
-            //    case "Credentials":
-            //        CredentialDataRecieved(user, message);
-            //        break;
-            //}
+                    string json = UTF8Encoding.UTF8.GetString(user.Buffer, 2, messageLength);
 
-            user.Client.GetStream().BeginRead(user.Buffer, 0, user.Buffer.Length, new AsyncCallback(ClientDataRecieved), user);
+                    user.Offset -= (messageLength + 2);
+                    Array.Copy(user.Buffer, messageLength + 2, user.Buffer, 0, user.Offset);
+
+                    dynamic message = JsonConvert.DeserializeObject<dynamic>(json);
+
+                    Console.WriteLine(message.Type);
+                    switch (message.Type.Value as string)
+                    {
+                        case "Chat":
+                            BroadcastData(user, json, true);
+                            break;
+                        case "Voice":
+                            BroadcastData(user, json, true);
+                            break;
+                        case "Credentials":
+                            CredentialDataRecieved(user, message);
+                            break;
+                    }
+                }
+                user.Client.GetStream().BeginRead(user.Buffer, user.Offset, user.Buffer.Length - user.Offset, new AsyncCallback(ClientDataRecieved), user);
+            }
+            catch(Exception e)
+            {
+            }
         }
 
         private void CredentialDataRecieved(User user, dynamic message)
         {
             // Handle credential authorization
+            if (message.Username == null) message.Username = "Anon";
+            if (message.Password == null) message.Password = "Anon";
             Console.WriteLine(message.Username + " " + message.Password);
         }
 
         private void BroadcastData(User user, string json, bool includeSelf)
         {
-            byte[] b = UTF8Encoding.UTF8.GetBytes(json);
-
             foreach (User u in UserList)
             {
                 try
                 {
                     if (!includeSelf && u == user) continue;
-                    u.Client.GetStream().Write(b, 0, b.Length);
-                    u.Client.GetStream().Flush();
+                    u.WriteMessage(json);
                 }
                 catch { }
             }
@@ -106,13 +121,12 @@ namespace Server
         public User(TcpClient client)
         {
             this.Client = client;
-            this.Client.ReceiveBufferSize = 4096;
             Buffer = new byte[4096];
         }
 
         public TcpClient Client { get; set; }
         public byte[] Buffer { get; set; }
-
+        public int Offset { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
 
@@ -139,21 +153,18 @@ namespace Server
                 this.Client.Close();
             }
         }
-    }
 
-    class Message
-    {
-        public string Type { get; set; }
-    }
+        public void WriteMessage(string json)
+        {
+            byte[] message = UTF8Encoding.UTF8.GetBytes(json);
+            lock (WriteLock)
+            {
+                Client.GetStream().Write(BitConverter.GetBytes((short)message.Length), 0, 2); // first two bytes
+                Client.GetStream().Write(message, 0, message.Length); // string of jason
+                Client.GetStream().Flush();
+            }
+        }
 
-    class VoiceMessage : Message
-    {
-        public byte[] Buffer { get; set; }
-    }
-
-    class CredentialMessage : Message
-    {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        private object WriteLock = new object();
     }
 }

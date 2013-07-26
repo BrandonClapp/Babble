@@ -34,18 +34,6 @@ namespace Client
 
         public void Transmit()
         {
-            StreamWriter sw = new StreamWriter(Client.GetStream());
-            Client.SendBufferSize = 4096;
-
-            sw.Write(JsonConvert.SerializeObject(
-                new 
-                { 
-                    Type = "Credentials", 
-                    Username = this.Username, 
-                    Password = this.Password 
-                }));
-            sw.Flush();
-
             var wie = new WaveInEvent();
 
             wie.DataAvailable += (sender, e) =>
@@ -59,30 +47,73 @@ namespace Client
                 writer.Close();
 
                 byte[] b = buff.GetBuffer();
-                sw.Write(JsonConvert.SerializeObject(
+                WriteMessage(
                 new 
                 { 
                     Type = "Voice", 
                     Data = b
-                }));
-                sw.Flush();
+                });
             };
 
             wie.StartRecording();
         }
 
+        public void WriteMessage(object o)
+        {
+            byte[] message = UTF8Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(o));
+            lock(WriteLock)
+            {
+                Client.GetStream().Write(BitConverter.GetBytes((short)message.Length), 0, 2); // first two bytes
+                Client.GetStream().Write(message, 0, message.Length); // string of jason
+                Client.GetStream().Flush();
+            }
+        }
+
+        private object WriteLock = new object();
+
+        public IEnumerable<dynamic> ReadMessages()
+        {
+            byte[] incomingMesssage = new byte[4096];
+            int offset = 0;
+
+            // Read each byte from the stream
+            for (int numberOfBytesRead = 0; ; )
+            {
+                try
+                {
+                    numberOfBytesRead = Client.GetStream().Read(incomingMesssage, offset, incomingMesssage.Length - offset);
+                }
+                catch(Exception e) 
+                {
+                    var s = "";
+                }
+
+                offset += numberOfBytesRead;
+                while (offset >= 2 && offset >= BitConverter.ToInt16(incomingMesssage, 0) + 2)
+                {
+                    short messageLength = BitConverter.ToInt16(incomingMesssage, 0);
+                    yield return JsonConvert.DeserializeObject<dynamic>
+                        (UTF8Encoding.UTF8.GetString(incomingMesssage, 2, messageLength));
+                    offset -= (messageLength + 2);
+                    Array.Copy(incomingMesssage, messageLength + 2, incomingMesssage, 0, offset);
+                }
+            }
+        }
+
         public void StartReading()
         {
-            byte[] buf = new byte[4096];
             try
             {
-                for (int i; (i = Client.GetStream().Read(buf, 0, buf.Length)) > 0; )
+                foreach (dynamic message in ReadMessages())
                 {
-                    dynamic message = JsonConvert.DeserializeObject<dynamic>(UTF8Encoding.UTF8.GetString(buf, 0, i));
-                    switch (message.Type as string)
+                    switch (message.Type.Value as string)
                     {
                         case "Voice":
-                            HandleVoiceMessage(message.Data as byte[]);
+                            var t = message.Data.GetType();
+                            var b = message.Data.Value;
+                            var tp = b.GetType();
+                            var b6 = Convert.FromBase64String(message.Data.Value as string);
+                            HandleVoiceMessage(b6);
                             break;
                     }
                 }
@@ -103,6 +134,16 @@ namespace Client
             };
         }
 
+        public void SendChatMessage(string chatMessage)
+        {
+            WriteMessage(new { Type = "Chat", Username = this.Username, Message = chatMessage });
+        }
+
+        public void SendCredentials()
+        {
+            WriteMessage(new { Type="Credentials", Username=this.Username, Password=this.Password });
+        }
+
         public bool Connect(IPEndPoint endpoint)
         {
             try
@@ -121,6 +162,8 @@ namespace Client
                 Thread thread = new Thread(ts);
                 thread.IsBackground = true;
                 thread.Start();
+
+                SendCredentials();
                 Transmit();
                 return true;
             }
