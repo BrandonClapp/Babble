@@ -10,7 +10,8 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using System.IO;
 using Newtonsoft.Json;
-using NAudio.Wave;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 
 namespace Client
 {
@@ -34,28 +35,17 @@ namespace Client
 
         public void Transmit()
         {
-            var wie = new WaveInEvent();
-
-            wie.DataAvailable += (sender, e) =>
+            var mic = Microphone.Default;
+            mic.Start(); 
+            var buffer = new byte[mic.GetSampleSizeInBytes(TimeSpan.FromMilliseconds(100))];
+            while (true)
             {
-                if (GetAsyncKeyState(0x11) == 0 || !Client.Connected) return;
-
-                MemoryStream buff = new MemoryStream();
-
-                WaveFileWriter writer = new WaveFileWriter(buff, wie.WaveFormat);
-                writer.Write(e.Buffer, 0, e.BytesRecorded);
-                writer.Close();
-
-                byte[] b = buff.GetBuffer();
-                WriteMessage(
-                new 
-                { 
-                    Type = "Voice", 
-                    Data = b
-                });
-            };
-
-            wie.StartRecording();
+                FrameworkDispatcher.Update();
+                for (var bytesRead = 0; bytesRead < buffer.Length; )
+                    bytesRead += mic.GetData(buffer, bytesRead, buffer.Length - bytesRead);
+                if (GetAsyncKeyState(0x11) == 0 || !Client.Connected) continue;
+                WriteMessage(new { Type = "Voice", Data = G711Audio.ALawEncoder.ALawEncode(buffer) });
+            }
         }
 
         public void WriteMessage(object o)
@@ -73,7 +63,7 @@ namespace Client
 
         public IEnumerable<dynamic> ReadMessages()
         {
-            byte[] incomingMesssage = new byte[4096];
+            byte[] incomingMesssage = new byte[1<<14];
             int offset = 0;
 
             // Read each byte from the stream
@@ -83,9 +73,8 @@ namespace Client
                 {
                     numberOfBytesRead = Client.GetStream().Read(incomingMesssage, offset, incomingMesssage.Length - offset);
                 }
-                catch(Exception e) 
+                catch
                 {
-                    var s = "";
                 }
 
                 offset += numberOfBytesRead;
@@ -109,11 +98,9 @@ namespace Client
                     switch (message.Type.Value as string)
                     {
                         case "Voice":
-                            var t = message.Data.GetType();
-                            var b = message.Data.Value;
-                            var tp = b.GetType();
-                            var b6 = Convert.FromBase64String(message.Data.Value as string);
-                            HandleVoiceMessage(b6);
+                            byte[] decodedByte;
+                            G711Audio.ALawDecoder.ALawDecode(Convert.FromBase64String(message.Data.Value as string), out decodedByte);
+                            HandleVoiceMessage(decodedByte);
                             break;
                     }
                 }
@@ -123,15 +110,13 @@ namespace Client
 
         private void HandleVoiceMessage(byte[] buff)
         {
-            WaveFileReader wfr = new WaveFileReader(new MemoryStream(buff));
-            WaveOutEvent wo = new WaveOutEvent();
-            wo.Init(wfr);
-            wo.Play();
-            wo.PlaybackStopped += (sender, e) =>
-            {
-                wo.Dispose();
-                wfr.Close();
-            };
+            FrameworkDispatcher.Update();
+            var sound = new SoundEffect(buff, Microphone.Default.SampleRate, AudioChannels.Mono);
+            sound.Play();
+        }
+
+        private void HandleChatMessage(dynamic message)
+        {
         }
 
         public void SendChatMessage(string chatMessage)
@@ -164,7 +149,8 @@ namespace Client
                 thread.Start();
 
                 SendCredentials();
-                Transmit();
+                new Thread(Transmit) { IsBackground = true }.Start();
+                //Transmit();
                 return true;
             }
             catch { }

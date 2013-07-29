@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Diagnostics;
 
 namespace Server
 {
@@ -26,12 +27,15 @@ namespace Server
         public int Port = 8888;
         public IPAddress IPAddress = IPAddress.Any;
         public List<User> UserList = new List<User>();
-        public int Counter = 0;
 
         public void Start()
         {
             TcpListener listener = new TcpListener(IPAddress, Port);
             listener.Start();
+
+            //string path = @"C:\Users\brandonclapp\Desktop\Voice-Meeting-master\Client\bin\Debug\Client.exe";
+            //Process.Start(path);
+
             while (true)
             {
                 User user = new User(listener.AcceptTcpClient());
@@ -74,7 +78,7 @@ namespace Server
 
                     dynamic message = JsonConvert.DeserializeObject<dynamic>(json);
 
-                    Console.WriteLine(message.Type + " - " + Counter++);
+                    //Console.WriteLine(message.Type);
                     switch (message.Type.Value as string)
                     {
                         case "Chat":
@@ -90,7 +94,7 @@ namespace Server
                 }
                 user.Client.GetStream().BeginRead(user.Buffer, user.Offset, user.Buffer.Length - user.Offset, new AsyncCallback(ClientDataRecieved), user);
             }
-            catch(Exception e)
+            catch
             {
             }
         }
@@ -122,7 +126,7 @@ namespace Server
         public User(TcpClient client)
         {
             this.Client = client;
-            Buffer = new byte[4096];
+            Buffer = new byte[1<<14];
         }
 
         public TcpClient Client { get; set; }
@@ -140,7 +144,7 @@ namespace Server
                     return (Client.Client.Poll(0, SelectMode.SelectRead)
                       && Client.Client.Receive(new byte[1], SocketFlags.Peek) == 0);
                 }
-                catch (SocketException se)
+                catch
                 {
                     return true;
                 }
