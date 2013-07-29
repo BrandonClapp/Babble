@@ -73,9 +73,7 @@ namespace Client
                 {
                     numberOfBytesRead = Client.GetStream().Read(incomingMesssage, offset, incomingMesssage.Length - offset);
                 }
-                catch
-                {
-                }
+                catch { }
 
                 offset += numberOfBytesRead;
                 while (offset >= 2 && offset >= BitConverter.ToInt16(incomingMesssage, 0) + 2)
@@ -150,7 +148,6 @@ namespace Client
 
                 SendCredentials();
                 new Thread(Transmit) { IsBackground = true }.Start();
-                //Transmit();
                 return true;
             }
             catch { }
@@ -168,7 +165,6 @@ namespace Client
 
         [DllImport("User32.dll")]
         static extern short GetAsyncKeyState(int vKey);
-
     }
 }
 
