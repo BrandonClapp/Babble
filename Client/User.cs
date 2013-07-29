@@ -48,6 +48,7 @@ namespace Client
             }
         }
 
+        private object WriteLock = new object();
         public void WriteMessage(object o)
         {
             byte[] message = UTF8Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(o));
@@ -59,14 +60,11 @@ namespace Client
             }
         }
 
-        private object WriteLock = new object();
-
         public IEnumerable<dynamic> ReadMessages()
         {
             byte[] incomingMesssage = new byte[1<<14];
             int offset = 0;
 
-            // Read each byte from the stream
             for (int numberOfBytesRead = 0; ; )
             {
                 try
