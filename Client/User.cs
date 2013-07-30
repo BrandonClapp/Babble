@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 using System.Runtime.InteropServices;
-using System.IO;
 using Newtonsoft.Json;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
+using System.Windows;
+using FragLabs.Audio.Codecs;
 
 namespace Client
 {
@@ -36,16 +35,27 @@ namespace Client
         public void Transmit()
         {
             var mic = Microphone.Default;
-            mic.Start(); 
-            var buffer = new byte[mic.GetSampleSizeInBytes(TimeSpan.FromMilliseconds(100))];
-            while (true)
+            if (mic != null)
             {
-                FrameworkDispatcher.Update();
-                for (var bytesRead = 0; bytesRead < buffer.Length; )
-                    bytesRead += mic.GetData(buffer, bytesRead, buffer.Length - bytesRead);
-                if (GetAsyncKeyState(0x11) == 0 || !Client.Connected) continue;
-                WriteMessage(new { Type = "Voice", Data = G711Audio.ALawEncoder.ALawEncode(buffer) });
+                mic.Start();
+                var buffer = new byte[3840]; // mic.GetSampleSizeInBytes(TimeSpan.FromMilliseconds(100))
+                while (true)
+                {
+                    FrameworkDispatcher.Update();
+                    for (var bytesRead = 0; bytesRead < 3528; ) // buffer.Length
+                        bytesRead += mic.GetData(buffer, bytesRead, buffer.Length - bytesRead);
+                    if (GetAsyncKeyState(0x11) == 0 || !Client.Connected) continue;
+                    // WriteMessage(new { Type = "Voice", Data = G711Audio.ALawEncoder.ALawEncode(buffer) }); original
+                    OpusEncoder encoder = OpusEncoder.Create(48000, 1, FragLabs.Audio.Codecs.Opus.Application.Voip);
+                    int encodedLength;
+                    byte[] encodedBuffer = encoder.Encode(buffer, buffer.Length, out encodedLength);
+                    byte[] trimmedBuffer = new byte[encodedLength];
+                    Array.Copy(encodedBuffer, trimmedBuffer, encodedLength);
+
+                    WriteMessage(new { Type = "Voice", Data = trimmedBuffer });
+                }
             }
+            else { MessageBox.Show("Could not detect default mic"); }
         }
 
         private object WriteLock = new object();
@@ -67,10 +77,7 @@ namespace Client
 
             for (int numberOfBytesRead = 0; ; )
             {
-                try
-                {
-                    numberOfBytesRead = Client.GetStream().Read(incomingMesssage, offset, incomingMesssage.Length - offset);
-                }
+                try { numberOfBytesRead = Client.GetStream().Read(incomingMesssage, offset, incomingMesssage.Length - offset); }
                 catch { }
 
                 offset += numberOfBytesRead;
@@ -94,9 +101,15 @@ namespace Client
                     switch (message.Type.Value as string)
                     {
                         case "Voice":
-                            byte[] decodedByte;
-                            G711Audio.ALawDecoder.ALawDecode(Convert.FromBase64String(message.Data.Value as string), out decodedByte);
-                            HandleVoiceMessage(decodedByte);
+                            //byte[] decodedByte;
+//                             G711Audio.ALawDecoder.ALawDecode(Convert.FromBase64String(message.Data.Value as string), out decodedByte);
+                            OpusDecoder decoder = OpusDecoder.Create(48000, 1);
+                            byte[] encodedBuffer = Convert.FromBase64String(message.Data.Value as string);
+                            int decodedLength;
+                            byte[] decodedBuffer = decoder.Decode(encodedBuffer, encodedBuffer.Length, out decodedLength);
+                            byte[] trimmedBuffer = new byte[decodedLength];
+                            Array.Copy(decodedBuffer, trimmedBuffer, decodedLength);
+                            HandleVoiceMessage(trimmedBuffer);
                             break;
                     }
                 }
