@@ -25,22 +25,15 @@ namespace Client
     public partial class NewConnectionWindow : Window
     {
         public IPEndPoint IPEndPoint { get { return new IPEndPoint(IPAddress.Parse(HostTextBox.Text), int.Parse(PortTextBox.Text)); } }
+        public string Username { get { return UsernameTextBox.Text; } }
+        public string Password { get { return PasswordBox.Password; } }
 
-        public NewConnectionWindow()
+        public NewConnectionWindow(Window window)
         {
+            this.Owner = window;
             InitializeComponent();
-            this.Loaded += NewConnectionWindow_Loaded;
-            this.WindowStartupLocation = WindowStartupLocation.Manual;
+            this.WindowStartupLocation = WindowStartupLocation.CenterOwner;
         }
-
-        void NewConnectionWindow_Loaded(object sender, RoutedEventArgs e)
-        {
-            this.WindowStartupLocation = WindowStartupLocation.Manual;
-            var mainWindow = Application.Current.Windows.Cast<Window>().FirstOrDefault(window => window is MainWindow) as MainWindow;
-            this.Top = mainWindow.Top + (mainWindow.Height / 2) / 2;
-            this.Left = mainWindow.Left + (mainWindow.Width / 2 ) / 2;
-        }
-        //MainWindow main = Application.Current.Windows.Cast<Window>().FirstOrDefault(window => window is MainWindow) as MainWindow;
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {

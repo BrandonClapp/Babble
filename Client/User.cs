@@ -19,6 +19,7 @@ namespace Client
         public TcpClient Client = new TcpClient();
         public string Username { get; set; }
         private string passwordHash;
+        public event Action<string> Connected;
 
         public string Password
         {
@@ -65,7 +66,7 @@ namespace Client
             lock(WriteLock)
             {
                 Client.GetStream().Write(BitConverter.GetBytes((short)message.Length), 0, 2); // first two bytes
-                Client.GetStream().Write(message, 0, message.Length); // string of jason
+                Client.GetStream().Write(message, 0, message.Length); // string of json
                 Client.GetStream().Flush();
             }
         }
@@ -102,7 +103,7 @@ namespace Client
                     {
                         case "Voice":
                             //byte[] decodedByte;
-//                             G711Audio.ALawDecoder.ALawDecode(Convert.FromBase64String(message.Data.Value as string), out decodedByte);
+                            //G711Audio.ALawDecoder.ALawDecode(Convert.FromBase64String(message.Data.Value as string), out decodedByte);
                             OpusDecoder decoder = OpusDecoder.Create(48000, 1);
                             byte[] encodedBuffer = Convert.FromBase64String(message.Data.Value as string);
                             int decodedLength;
@@ -110,6 +111,9 @@ namespace Client
                             byte[] trimmedBuffer = new byte[decodedLength];
                             Array.Copy(decodedBuffer, trimmedBuffer, decodedLength);
                             HandleVoiceMessage(trimmedBuffer);
+                            break;
+                        case "Connected":
+                            Connected(message.Username.Value);
                             break;
                     }
                 }
@@ -151,7 +155,6 @@ namespace Client
                     Client.EndConnect(ar);
                 }
 
-                // play some cool robotic connected/success sound
                 ThreadStart ts = new ThreadStart(StartReading);
                 Thread thread = new Thread(ts);
                 thread.IsBackground = true;

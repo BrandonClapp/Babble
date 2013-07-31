@@ -102,8 +102,11 @@ namespace Server
         private void CredentialDataRecieved(User user, dynamic message)
         {
             // Handle credential authorization
-            if (message.Username == null) message.Username = "Anon";
-            if (message.Password == null) message.Password = "Anon";
+            if (string.IsNullOrWhiteSpace(message.Username.Value))
+            {
+                message.Username = "Anon";
+                message.Password = string.Empty;
+            }
             Console.WriteLine(message.Username + " " + message.Password);
         }
 
@@ -165,7 +168,7 @@ namespace Server
             lock (WriteLock)
             {
                 Client.GetStream().Write(BitConverter.GetBytes((short)message.Length), 0, 2); // first two bytes
-                Client.GetStream().Write(message, 0, message.Length); // string of jason
+                Client.GetStream().Write(message, 0, message.Length); // string of json
                 Client.GetStream().Flush();
             }
         }
