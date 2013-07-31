@@ -171,6 +171,7 @@ namespace Client
             {
                 Client.GetStream().Close();
                 Client.Close();
+                
             }
         }
 
