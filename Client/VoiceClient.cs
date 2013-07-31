@@ -22,6 +22,8 @@ namespace Client
         public event Action<string, int> SomeUserConnected;
         public event Action<string, int> SomeUserDisconnected;
         public event Action<string, int> ChannelCreated;
+        public event Action<bool> Connected;
+        public event Action Disconnected;
 
         public void Transmit()
         {
@@ -68,8 +70,7 @@ namespace Client
 
             for (int numberOfBytesRead = 0; ; )
             {
-                try { numberOfBytesRead = Client.GetStream().Read(incomingMesssage, offset, incomingMesssage.Length - offset); }
-                catch { }
+                numberOfBytesRead = Client.GetStream().Read(incomingMesssage, offset, incomingMesssage.Length - offset); // removed try catch here
 
                 offset += numberOfBytesRead;
                 while (offset >= 2 && offset >= BitConverter.ToInt16(incomingMesssage, 0) + 2)
@@ -139,7 +140,7 @@ namespace Client
             WriteMessage(new { Type="Hello" });
         }
 
-        public bool Connect(IPEndPoint endpoint)
+        public void Connect(IPEndPoint endpoint)
         {
             try
             {
@@ -159,10 +160,10 @@ namespace Client
 
                 SendCredentials();
                 new Thread(Transmit) { IsBackground = true }.Start();
-                return true;
+                Connected(true);
             }
-            catch { }
-            return false;
+            catch { Connected(false); }
+            
         }
 
         public void Disconnect()
@@ -171,6 +172,7 @@ namespace Client
             {
                 Client.GetStream().Close();
                 Client.Close();
+                Disconnected();
             }
         }
 

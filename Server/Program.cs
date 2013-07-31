@@ -60,6 +60,7 @@ namespace Server
             {
                 UserList.Remove(user);
                 user.Disconnect();
+                BroadcastData(user, new { Type = "SomeUserDisconnected", Username = user.Username, Channel = user.ChannelId });
                 Console.WriteLine("User Disconnected");
                 return;
             }
@@ -107,8 +108,11 @@ namespace Server
             user.WriteMessage(new { Type = "ChannelCreated", ChannelName = "Default Channel", ChannelId = 0 });
             user.WriteMessage(new { Type = "ChannelCreated", ChannelName = "Another Channel", ChannelId = 1 });
             user.WriteMessage(new { Type = "ChannelCreated", ChannelName = "Again Channel", ChannelId = 2 });
-            user.WriteMessage(new { Type = "SomeUserConnected", Username = user.Username, Channel = 0 });
-            user.WriteMessage(new { Type = "SomeUserConnected", Username = "Bobby", Channel = 1 });
+            foreach (User u in UserList)
+            {
+                user.WriteMessage(new { Type = "SomeUserConnected", Username = u.Username, Channel = u.ChannelId });
+            }
+            BroadcastData(user, new { Type = "SomeUserConnected", Username = user.Username, Channel = user.ChannelId });
         }
 
         private void CredentialDataReceived(User user, dynamic message)
@@ -125,7 +129,7 @@ namespace Server
             Console.WriteLine(user.Username + " " + user.Password);
         }
 
-        private void BroadcastData(User user, string json, bool includeSelf)
+        private void BroadcastData(User user, string json, bool includeSelf = false)
         {
             foreach (User u in UserList)
             {
@@ -137,10 +141,16 @@ namespace Server
                 catch { }
             }
         }
+
+        private void BroadcastData(User user, object obj, bool includeSelf = false)
+        {
+            BroadcastData(user, JsonConvert.SerializeObject(obj), includeSelf);
+        }
     }
 
     class User
     {
+        public int ChannelId { get; set; }
         public User(TcpClient client)
         {
             this.Client = client;

@@ -14,7 +14,25 @@ namespace Client
             client.SomeUserConnected += SomeUserConnected;
             client.SomeUserDisconnected += SomeUserDisconnected;
             client.ChannelCreated += ChannelCreated;
+            client.Connected += Connected;
+            client.Disconnected += Disconnected;
             InitializeComponent();
+        }
+
+        private void Connected(bool successful)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (successful) AddActivity("Connected");
+                else MessageBox.Show("Could not connect to host.");
+            });
+        }
+
+        private void Disconnected()
+        {
+            Dispatcher.Invoke(() => {
+                this.UserAreaTree.Items.Clear();
+            });
         }
 
         private void NewConnection_Click(object sender, RoutedEventArgs e)
@@ -30,12 +48,7 @@ namespace Client
                     AddActivity("Attempting to connect to " + endpoint.Address + ":" + endpoint.Port + ".");
                     client.User.Username = ncw.Username;
                     client.User.Password = ncw.Password;
-
-                    if(client.Connect(ncw.IPEndPoint)) 
-                    {
-                        AddActivity("Connected");
-                    }
-                    else MessageBox.Show("Could not connect to host.");
+                    client.Connect(ncw.IPEndPoint);
                 }
                 catch
                 {
@@ -53,37 +66,16 @@ namespace Client
 
         private void SomeUserConnected(string username, int channel)
         {
-            Dispatcher.Invoke(() => { (this.UserAreaTree.Items[channel] as TreeViewItem).Items.Add(username); });
-            // TODO: read from buffer and populate user/channel treeview
-            //TreeView tv = this.UserAreaTree;
-
-            //List<User> userList = new List<User>()
-            //            {
-            //                new User { Username = "Frank" },
-            //                new User { Username = "Scott" },
-            //                new User { Username = "Raef" }
-            //            };
-
-            //List<List<User>> channelList = new List<List<User>>() { userList };
-
-            //foreach(List<User> uList in channelList)
-            //{
-            //    TreeViewItem channel = new TreeViewItem() { Header = "Daily Scrum" };
-                
-            //    channel.IsExpanded = true;
-            //    foreach (User u in uList) channel.Items.Add(u.Username);
-            //    tv.Items.Add(channel);
-            //}
+            Dispatcher.Invoke(() => { 
+                (this.UserAreaTree.Items[channel] as TreeViewItem).Items.Add(username);
+            });
         }
 
         private void SomeUserDisconnected(string username, int channel)
         {
-            Dispatcher.Invoke(() => { (this.UserAreaTree.Items[channel] as TreeViewItem).Items.Remove(username); });
-        }
-
-        private void HideContent()
-        {
-            this.UserAreaTree.IsEnabled = false;
+            Dispatcher.Invoke(() => { 
+                (this.UserAreaTree.Items[channel] as TreeViewItem).Items.Remove(username); 
+            });
         }
 
         public void AddActivity(string s)
