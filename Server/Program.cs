@@ -88,7 +88,10 @@ namespace Server
                             BroadcastData(user, json, true);
                             break;
                         case "Credentials":
-                            CredentialDataRecieved(user, message);
+                            CredentialDataReceived(user, message);
+                            break;
+                        case "Hello":
+                            HelloReceived(user);
                             break;
                     }
                 }
@@ -99,15 +102,27 @@ namespace Server
             }
         }
 
-        private void CredentialDataRecieved(User user, dynamic message)
+        private void HelloReceived(User user)
+        {
+            user.WriteMessage(new { Type = "ChannelCreated", ChannelName = "Default Channel", ChannelId = 0 });
+            user.WriteMessage(new { Type = "ChannelCreated", ChannelName = "Another Channel", ChannelId = 1 });
+            user.WriteMessage(new { Type = "ChannelCreated", ChannelName = "Again Channel", ChannelId = 2 });
+            user.WriteMessage(new { Type = "SomeUserConnected", Username = user.Username, Channel = 0 });
+            user.WriteMessage(new { Type = "SomeUserConnected", Username = "Bobby", Channel = 1 });
+        }
+
+        private void CredentialDataReceived(User user, dynamic message)
         {
             // Handle credential authorization
             if (string.IsNullOrWhiteSpace(message.Username.Value))
             {
-                message.Username = "Anon";
-                message.Password = string.Empty;
+                message.Username.Value = "Anon";
+                message.Password.Value = string.Empty;
             }
-            Console.WriteLine(message.Username + " " + message.Password);
+            user.Username = message.Username.Value as string;
+            user.Password = message.Password.Value as string;
+
+            Console.WriteLine(user.Username + " " + user.Password);
         }
 
         private void BroadcastData(User user, string json, bool includeSelf)
@@ -171,6 +186,11 @@ namespace Server
                 Client.GetStream().Write(message, 0, message.Length); // string of json
                 Client.GetStream().Flush();
             }
+        }
+
+        public void WriteMessage(object obj)
+        {
+            WriteMessage(JsonConvert.SerializeObject(obj));
         }
 
         private object WriteLock = new object();

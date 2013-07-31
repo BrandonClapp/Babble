@@ -95,9 +95,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Channel.cs" />
     <Compile Include="G711Audio.cs" />
     <Compile Include="User.cs" />
-    <Page Include="MainWindow.xaml">
+    <Compile Include="VoiceClient.cs" />
+    <Page Include="VoiceClientGUI.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -105,8 +107,8 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
+    <Compile Include="VoiceClientGUI.xaml.cs">
+      <DependentUpon>VoiceClientGUI.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
     <Page Include="NewConnectionWindow.xaml">
