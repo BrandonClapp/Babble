@@ -169,7 +169,8 @@
     <Resource Include="images\headset_icon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="images\greenlight.png" />
+    <Resource Include="images\talk_active.png" />
+    <Resource Include="images\talk_inactive.png" />
     <Content Include="lib\Microsoft.DirectX.DirectSound.dll" />
     <Content Include="lib\Microsoft.DirectX.dll" />
     <Content Include="lib\opus.dll">
