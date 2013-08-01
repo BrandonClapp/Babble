@@ -55,7 +55,7 @@ namespace Server
         private void ClientDataRecieved(IAsyncResult iar)
         {
             User user = iar.AsyncState as User;
-
+           
             if (user.IsDisconnected)
             {
                 UserList.Remove(user);
@@ -79,7 +79,7 @@ namespace Server
 
                     dynamic message = JsonConvert.DeserializeObject<dynamic>(json);
 
-                    //Console.WriteLine(message.Type);
+                    Console.WriteLine(message.Type);
                     switch (message.Type.Value as string)
                     {
                         case "Chat":

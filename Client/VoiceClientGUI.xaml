@@ -26,9 +26,7 @@
                 <ColumnDefinition Name="Interaction" Width="*" />
                 <ColumnDefinition Name="Information" Width="*"/>
             </Grid.ColumnDefinitions>
-            <TreeView Name="UserAreaTree" Background="Transparent">
-                
-            </TreeView>
+            <TreeView Name="UserAreaTree" Background="Transparent"/>
             <GridSplitter Grid.Column="0" HorizontalAlignment="Right" Width="3" VerticalAlignment="Stretch" Background="Black" />
         </Grid>
 

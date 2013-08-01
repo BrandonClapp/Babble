@@ -17,6 +17,7 @@ namespace Client
 {
     class VoiceClient
     {
+        public IntPtr Owner { get; set; }
         public TcpClient Client = new TcpClient();
         public User User = new User();
         public event Action<string, int> SomeUserConnected;
@@ -27,28 +28,33 @@ namespace Client
 
         public void Transmit()
         {
-            var mic = Microphone.Default;
-            if (mic != null)
-            {
-                mic.Start();
-                var buffer = new byte[3840]; // mic.GetSampleSizeInBytes(TimeSpan.FromMilliseconds(100))
-                while (true)
-                {
-                    FrameworkDispatcher.Update();
-                    for (var bytesRead = 0; bytesRead < 3528; ) // buffer.Length
-                        bytesRead += mic.GetData(buffer, bytesRead, buffer.Length - bytesRead);
-                    if (GetAsyncKeyState(0x11) == 0 || !Client.Connected) continue;
-                    // WriteMessage(new { Type = "Voice", Data = G711Audio.ALawEncoder.ALawEncode(buffer) }); original
-                    OpusEncoder encoder = OpusEncoder.Create(48000, 1, FragLabs.Audio.Codecs.Opus.Application.Voip);
-                    int encodedLength;
-                    byte[] encodedBuffer = encoder.Encode(buffer, buffer.Length, out encodedLength);
-                    byte[] trimmedBuffer = new byte[encodedLength];
-                    Array.Copy(encodedBuffer, trimmedBuffer, encodedLength);
 
-                    WriteMessage(new { Type = "Voice", Data = trimmedBuffer });
-                }
-            }
-            else { MessageBox.Show("Could not detect default mic"); }
+            Sound.Record(Owner, b => {
+                if (GetAsyncKeyState(0x11) == 0 || !Client.Connected) return;
+                WriteMessage(new { Type = "Voice", Data = b });
+            });
+            //var mic = Microphone.Default;
+            //if (mic != null)
+            //{
+            //    mic.Start();
+            //    var buffer = new byte[3840]; // mic.GetSampleSizeInBytes(TimeSpan.FromMilliseconds(100))
+            //    while (true)
+            //    {
+            //        FrameworkDispatcher.Update();
+            //        for (var bytesRead = 0; bytesRead < 3528; ) // buffer.Length
+            //            bytesRead += mic.GetData(buffer, bytesRead, buffer.Length - bytesRead);
+            //        if (GetAsyncKeyState(0x11) == 0 || !Client.Connected) continue;
+            //        // WriteMessage(new { Type = "Voice", Data = G711Audio.ALawEncoder.ALawEncode(buffer) }); original
+            //        OpusEncoder encoder = OpusEncoder.Create(48000, 1, FragLabs.Audio.Codecs.Opus.Application.Voip);
+            //        int encodedLength;
+            //        byte[] encodedBuffer = encoder.Encode(buffer, buffer.Length, out encodedLength);
+            //        byte[] trimmedBuffer = new byte[encodedLength];
+            //        Array.Copy(encodedBuffer, trimmedBuffer, encodedLength);
+
+            //        WriteMessage(new { Type = "Voice", Data = trimmedBuffer });
+            //    }
+            //}
+            //else { MessageBox.Show("Could not detect default mic"); }
         }
 
         private object WriteLock = new object();
@@ -95,13 +101,13 @@ namespace Client
                         case "Voice":
                             //byte[] decodedByte;
                             //G711Audio.ALawDecoder.ALawDecode(Convert.FromBase64String(message.Data.Value as string), out decodedByte);
-                            OpusDecoder decoder = OpusDecoder.Create(48000, 1);
-                            byte[] encodedBuffer = Convert.FromBase64String(message.Data.Value as string);
-                            int decodedLength;
-                            byte[] decodedBuffer = decoder.Decode(encodedBuffer, encodedBuffer.Length, out decodedLength);
-                            byte[] trimmedBuffer = new byte[decodedLength];
-                            Array.Copy(decodedBuffer, trimmedBuffer, decodedLength);
-                            HandleVoiceMessage(trimmedBuffer);
+                            //OpusDecoder decoder = OpusDecoder.Create(48000, 1);
+                            //byte[] encodedBuffer = Convert.FromBase64String(message.Data.Value as string);
+                            //int decodedLength;
+                            //byte[] decodedBuffer = decoder.Decode(encodedBuffer, encodedBuffer.Length, out decodedLength);
+                            //byte[] trimmedBuffer = new byte[decodedLength];
+                            //Array.Copy(decodedBuffer, trimmedBuffer, decodedLength);
+                            HandleVoiceMessage(Convert.FromBase64String(message.Data.Value as string));
                             break;
                         case "SomeUserConnected":
                             SomeUserConnected(message.Username.Value as string, (int)message.Channel.Value);
@@ -120,9 +126,10 @@ namespace Client
 
         private void HandleVoiceMessage(byte[] buff)
         {
-            FrameworkDispatcher.Update();
-            var sound = new SoundEffect(buff, Microphone.Default.SampleRate, AudioChannels.Mono);
-            sound.Play();
+            Sound.Play(Owner, buff);
+            //FrameworkDispatcher.Update();
+            //var sound = new SoundEffect(buff, Microphone.Default.SampleRate, AudioChannels.Mono);
+            //sound.Play();
         }
 
         private void HandleChatMessage(dynamic message)

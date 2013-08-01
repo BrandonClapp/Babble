@@ -2,6 +2,10 @@
 using System.Net;
 using System.Collections.Generic;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System;
+using System.Windows.Interop;
 
 namespace Client
 {
@@ -11,15 +15,15 @@ namespace Client
 
         public VoiceClientGUI()
         {
-            client.SomeUserConnected += SomeUserConnected;
-            client.SomeUserDisconnected += SomeUserDisconnected;
-            client.ChannelCreated += ChannelCreated;
-            client.Connected += Connected;
-            client.Disconnected += Disconnected;
+            client.SomeUserConnected += SomeUserConnectedHandler;
+            client.SomeUserDisconnected += SomeUserDisconnectedHandler;
+            client.ChannelCreated += ChannelCreatedHandler;
+            client.Connected += ConnectedHandler;
+            client.Disconnected += DisconnectedHandler;
             InitializeComponent();
         }
 
-        private void Connected(bool successful)
+        private void ConnectedHandler(bool successful)
         {
             Dispatcher.Invoke(() =>
             {
@@ -28,7 +32,7 @@ namespace Client
             });
         }
 
-        private void Disconnected()
+        private void DisconnectedHandler()
         {
             Dispatcher.Invoke(() => {
                 this.UserAreaTree.Items.Clear();
@@ -37,7 +41,6 @@ namespace Client
 
         private void NewConnection_Click(object sender, RoutedEventArgs e)
         {
-            // open new window for input information
             NewConnectionWindow ncw = new NewConnectionWindow(this);
             if (ncw.ShowDialog() == true) 
             {
@@ -48,6 +51,7 @@ namespace Client
                     AddActivity("Attempting to connect to " + endpoint.Address + ":" + endpoint.Port + ".");
                     client.User.Username = ncw.Username;
                     client.User.Password = ncw.Password;
+                    client.Owner = new WindowInteropHelper(this).Handle;
                     client.Connect(ncw.IPEndPoint);
                 }
                 catch
@@ -57,21 +61,21 @@ namespace Client
             }
         }
 
-        private void ChannelCreated(string name, int id)
+        private void ChannelCreatedHandler(string name, int id)
         {
             Dispatcher.Invoke(() => {
                 this.UserAreaTree.Items.Insert(id, new TreeViewItem { IsExpanded = true, Header = name }); 
             });
         }
 
-        private void SomeUserConnected(string username, int channel)
+        private void SomeUserConnectedHandler(string username, int channel)
         {
-            Dispatcher.Invoke(() => { 
+            Dispatcher.Invoke(() => {
                 (this.UserAreaTree.Items[channel] as TreeViewItem).Items.Add(username);
             });
         }
 
-        private void SomeUserDisconnected(string username, int channel)
+        private void SomeUserDisconnectedHandler(string username, int channel)
         {
             Dispatcher.Invoke(() => { 
                 (this.UserAreaTree.Items[channel] as TreeViewItem).Items.Remove(username); 
