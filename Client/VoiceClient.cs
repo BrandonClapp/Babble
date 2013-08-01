@@ -7,8 +7,6 @@ using System.Net;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
 using System.Windows;
 using FragLabs.Audio.Codecs;
 using System.Windows.Threading;
