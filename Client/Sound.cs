@@ -28,7 +28,7 @@ namespace Client
             BlockAlign = 2,
             AverageBytesPerSecond = 96000
         };
-        private static int bufferSize = waveFormat.AverageBytesPerSecond;
+        private static int bufferSize = waveFormat.AverageBytesPerSecond / 2;
         private static CaptureBuffer captureBuffer = new CaptureBuffer(
             new CaptureBufferDescription { Format = waveFormat, BufferBytes = bufferSize },
             new Capture(new CaptureDevicesCollection()[0].DriverGuid)
@@ -69,7 +69,7 @@ namespace Client
         public static byte[] Encode(byte[] buffer)
         {
             var encoder = OpusEncoder.Create(48000, 1, Application.Voip);
-            var b = new byte[1920];
+            var b = new byte[bufferSize/50]; // 1920 =  1 second : 960 = half second
             var encoded = new MemoryStream();
             for (var i = 0; i < buffer.Length; i += b.Length)
             {
