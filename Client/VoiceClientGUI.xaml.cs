@@ -15,11 +15,14 @@ namespace Client
 
         public VoiceClientGUI()
         {
+            Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";lib");
+
             client.SomeUserConnected += SomeUserConnectedHandler;
             client.SomeUserDisconnected += SomeUserDisconnectedHandler;
             client.ChannelCreated += ChannelCreatedHandler;
             client.Connected += ConnectedHandler;
             client.Disconnected += DisconnectedHandler;
+            
             InitializeComponent();
         }
 
