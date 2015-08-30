@@ -1,0 +1,21 @@
+{
+  "name": "Babble",
+  "main": "index.js",
+  "version": "0.0.0",
+  "homepage": "https://github.com/BrandonClapp/Babble",
+  "authors": [
+    "Brandon Clapp <clapp09@gmail.com>"
+  ],
+  "description": "VoIP client built on electron, socket.io, and angular.",
+  "keywords": [
+    "babble"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
