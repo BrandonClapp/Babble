@@ -50,12 +50,13 @@ namespace Client
                 try
                 {
                     Disconnect_Click(sender, e);
-                    IPEndPoint endpoint = ncw.IPEndPoint;
-                    AddActivity("Attempting to connect to " + endpoint.Address + ":" + endpoint.Port + ".");
+                    var host = ncw.Host;
+                    var port = ncw.Port;
+                    AddActivity("Attempting to connect to " + host + ":" + port + ".");
                     client.User.Username = ncw.Username;
                     client.User.Password = ncw.Password;
                     client.Owner = new WindowInteropHelper(this).Handle;
-                    client.Connect(ncw.IPEndPoint);
+                    client.Connect(host, port);
                 }
                 catch
                 {
