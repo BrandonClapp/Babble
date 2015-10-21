@@ -145,13 +145,13 @@ namespace Client
             WriteMessage(new { Type="Hello" });
         }
 
-        public void Connect(IPEndPoint endpoint)
+        public void Connect(string host, int port)
         {
             try
             {
                 Client = new TcpClient();
 
-                IAsyncResult ar = Client.BeginConnect(endpoint.Address, endpoint.Port, null, null);
+                IAsyncResult ar = Client.BeginConnect(host, port, null, null);
                 using (WaitHandle wh = ar.AsyncWaitHandle)
                 {
                     if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2), false)) throw new TimeoutException();

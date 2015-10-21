@@ -23,7 +23,8 @@ namespace Client
     /// </summary>
     public partial class NewConnectionWindow : Window
     {
-        public IPEndPoint IPEndPoint { get { return new IPEndPoint(IPAddress.Parse(HostTextBox.Text), int.Parse(PortTextBox.Text)); } }
+        public string Host { get { return HostTextBox.Text.Trim(); } }
+        public int Port { get { return int.Parse(PortTextBox.Text); } }
         public string Username { get { return UsernameTextBox.Text; } }
         public string Password { get { return PasswordBox.Password; } }
 
