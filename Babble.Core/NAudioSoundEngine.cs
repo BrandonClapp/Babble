@@ -48,8 +48,17 @@ namespace Babble.Core
 
         public void Record(Action<byte[]> callback)
         {
-            waveIn.StartRecording();
-            Record_Callback = callback;
+            try
+            {
+                waveIn.StartRecording();
+                Record_Callback = callback;
+            }
+            catch (Exception ex)
+            {
+                // exception thrown when you don't have recording device
+                // TODO: bubble this thing up to ui to let the user know
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+            }
         }
     }
 }

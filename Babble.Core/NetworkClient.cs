@@ -18,7 +18,15 @@ namespace Babble.Core
             Writer.AutoFlush = true;
         }
 
-        public TcpClient Client { get; set; }
+        public static NetworkClient Connect(string host, int port)
+        {
+            var tcpClient = new TcpClient();
+            tcpClient.Connect(host, port);
+            NetworkClient client = new NetworkClient(tcpClient);
+            return client;
+        }
+
+        private TcpClient Client { get; set; }
         private StreamReader Reader { get; set; }
         private StreamWriter Writer { get; set; }
         public UserInfo UserInfo { get; set; }
