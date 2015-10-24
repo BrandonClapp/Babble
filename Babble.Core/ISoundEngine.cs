@@ -8,12 +8,24 @@ namespace Babble.Core
 {
     public interface ISoundEngine
     {
+        void Init();
+        void Destroy();
         void Record(Action<byte[]> callback);
         void Play(byte[] data);
     }
 
     public class DummySoundEngine : ISoundEngine
     {
+        public void Destroy()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Init()
+        {
+            throw new NotImplementedException();
+        }
+
         public void Play(byte[] data)
         {
         }

@@ -23,21 +23,21 @@ namespace Client
         public event Action<string, int> ChannelCreated;
         public event Action<bool> Connected;
         public event Action Disconnected;
-        public ISoundEngine SoundEngine = new DummySoundEngine();
+        public ISoundEngine SoundEngine = new NAudioSoundEngine();
 
         public void Transmit()
         {
-
-            Sound.Record(Owner, b =>
-            {
-                if (GetAsyncKeyState(0x11) == 0 || NetworkClient.IsDisconnected) return;
-                WriteMessage(Message.CreateVoiceMessage(Convert.ToBase64String(b)));
-            });
-            //SoundEngine.Record((b) =>
+            SoundEngine.Init();
+            //Sound.Record(Owner, b =>
             //{
             //    if (GetAsyncKeyState(0x11) == 0 || NetworkClient.IsDisconnected) return;
             //    WriteMessage(Message.CreateVoiceMessage(Convert.ToBase64String(b)));
             //});
+            SoundEngine.Record((b) =>
+            {
+                if (GetAsyncKeyState(0x11) == 0 || NetworkClient.IsDisconnected) return;
+                WriteMessage(Message.CreateVoiceMessage(Convert.ToBase64String(b)));
+            });
         }
 
         private object WriteLock = new object();
@@ -84,8 +84,8 @@ namespace Client
 
         private void HandleVoiceMessage(byte[] buff)
         {
-            Sound.Play(Owner, buff);
-            //SoundEngine.Play(buff);
+            //Sound.Play(Owner, buff);
+            SoundEngine.Play(buff);
         }
 
         public void SendChatMessage(string chatMessage)
