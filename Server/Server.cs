@@ -47,15 +47,6 @@ namespace Server
             {
                 while (true)
                 {
-                    if (client.IsDisconnected)
-                    {
-                        client.Disconnect();
-                        ClientList.Remove(client);
-                        BroadcastData(client, Message.Create(MessageType.UserDisconnected, client.UserInfo));
-                        Console.WriteLine("User Disconnected");
-                        return;
-                    }
-
                     var message = client.ReadMessage();
                     if (message == null)
                     {
@@ -92,13 +83,7 @@ namespace Server
 
         private void HelloReceived(NetworkClient client)
         {
-
-            //Console.WriteLine("hello");
-            //client.WriteMessage(new Message(MessageType.ChannelCreated, new Channel { Name = "Default Channel", Id = 0 }));
-            //client.WriteMessage(new Message(MessageType.ChannelCreated, new Channel { Name = "Another Channel", Id = 1 }));
-            //client.WriteMessage(new Message(MessageType.ChannelCreated, new Channel { Name = "Again Channel", Id = 2 }));
-
-            //BroadcastData(client, new Message(MessageType.UserConnected, client.UserInfo), true);
+            // Do nothing for now
         }
 
         private void CredentialDataReceived(NetworkClient client, Message message)
@@ -114,7 +99,7 @@ namespace Server
                 result.IsAuthenticated = true;
                 result.Message = "Great success!";
 
-                //AddUserToChannel(userInfo);
+                AddUserToChannel(userInfo);
                 BroadcastData(client, new Message(MessageType.UserConnected, userInfo));
             }
             else
