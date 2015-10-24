@@ -37,7 +37,7 @@ namespace Client
             SoundEngine.Record((b) =>
             {
                 if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
-                WriteMessage(new Message(MessageType.Voice, Convert.ToBase64String(b)));
+                WriteMessage(Message.Create(MessageType.Voice, Convert.ToBase64String(b)));
             });
         }
 
@@ -111,7 +111,7 @@ namespace Client
             }
 
             Client = NetworkClient.Connect(host, port);
-            Client.WriteMessage(new Message(MessageType.Credential, new UserCredential() { Username = username, Password = password }));
+            Client.WriteMessage(Message.Create(MessageType.Credential, new UserCredential() { Username = username, Password = password }));
             var credentialResult = Client.ReadMessage().GetData<UserCredentialResult>();
             if (credentialResult.IsAuthenticated)
             {
@@ -122,7 +122,7 @@ namespace Client
                 new Thread(Transmit) { IsBackground = true }.Start();
 
                 Connected(true, credentialResult.Message);
-                Client.WriteMessage(new Message(MessageType.RequestChannels));
+                Client.WriteMessage(Message.Create(MessageType.RequestChannels));
             }
             else
             {
