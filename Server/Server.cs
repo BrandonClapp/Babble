@@ -77,6 +77,7 @@ namespace Server
                 // If the handler no longer running, do some clean up here
                 client.Disconnect();
                 ClientList.Remove(client);
+                RemoveUserFromChannel(client.UserInfo);
                 Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.UserInfo.Username, ClientList.Count);
             }, TaskCreationOptions.LongRunning);
         }
@@ -123,6 +124,14 @@ namespace Server
             else
             {
                 channel.Users.Add(userInfo);
+            }
+        }
+
+        private void RemoveUserFromChannel(UserInfo userInfo)
+        {
+            foreach (var channel in Channels)
+            {
+                channel.Users.RemoveAll(u => u.Username == userInfo.Username);
             }
         }
 
