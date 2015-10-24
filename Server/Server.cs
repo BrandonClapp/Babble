@@ -136,7 +136,7 @@ namespace Server
                     {
                         return;
                     }
-                    Console.WriteLine("Broadcasting: {0}", message.ToJson());
+                    Console.WriteLine("Broadcasting: {0}", message.Type);
                     c.WriteMessage(message);
                 }
                 catch (Exception ex)
