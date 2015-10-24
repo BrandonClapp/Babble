@@ -41,7 +41,7 @@ namespace Server
                     {
                         client.Disconnect();
                         ClientList.Remove(client);
-                        BroadcastData(client, Message.CreateUserDisconnectedMessage(client.UserInfo));
+                        BroadcastData(client, Message.Create(MessageType.UserDisconnected, client.UserInfo));
                         Console.WriteLine("User Disconnected");
                         return;
                     }
@@ -74,11 +74,11 @@ namespace Server
         private void HelloReceived(NetworkClient client)
         {
             Console.WriteLine("hello");
-            client.WriteMessage(Message.CreateChannelCreatedMessage(new Channel { Name = "Default Channel", Id = 0 }));
-            client.WriteMessage(Message.CreateChannelCreatedMessage(new Channel { Name = "Another Channel", Id = 1 }));
-            client.WriteMessage(Message.CreateChannelCreatedMessage(new Channel { Name = "Again Channel", Id = 2 }));
+            client.WriteMessage(Message.Create(MessageType.ChannelCreated, new Channel { Name = "Default Channel", Id = 0 }));
+            client.WriteMessage(Message.Create(MessageType.ChannelCreated, new Channel { Name = "Another Channel", Id = 1 }));
+            client.WriteMessage(Message.Create(MessageType.ChannelCreated, new Channel { Name = "Again Channel", Id = 2 }));
 
-            BroadcastData(client, Message.CreateUserConnectedMessage(client.UserInfo), true);
+            BroadcastData(client, Message.Create(MessageType.UserConnected, client.UserInfo), true);
         }
 
         private void CredentialDataReceived(NetworkClient client, Message message)

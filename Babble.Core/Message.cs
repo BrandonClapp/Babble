@@ -9,11 +9,9 @@ namespace Babble.Core
 {
     public class Message
     {
-        public Message()
-        {
-        }
 
-        public Message(MessageType type, dynamic data)
+        [JsonConstructor]
+        private Message(MessageType type, dynamic data = null)
         {
             Type = type;
             Data = data;
@@ -32,39 +30,9 @@ namespace Babble.Core
             return JsonConvert.DeserializeObject<Message>(json);
         }
 
-        public static Message CreateCredentialsMessage(UserInfo userInfo)
+        public static Message Create(MessageType type, dynamic data = null)
         {
-            var message = new Message(MessageType.Credentials, userInfo);
-            return message;
-        }
-
-        public static Message CreateHelloMessage()
-        {
-            return new Message(MessageType.Hello, null);
-        }
-
-        public static Message CreateChannelCreatedMessage(Channel channel)
-        {
-            var message = new Message(MessageType.ChannelCreated, channel);
-            return message;
-        }
-
-        public static Message CreateUserConnectedMessage(UserInfo userInfo)
-        {
-            var message = new Message(MessageType.UserConnected, userInfo);
-            return message;
-        }
-
-        public static Message CreateUserDisconnectedMessage(UserInfo userInfo)
-        {
-            var message = new Message(MessageType.UserDisconnected, userInfo);
-            return message;
-        }
-
-        public static Message CreateVoiceMessage(object data)
-        {
-            var message = new Message(MessageType.Voice, data);
-            return message;
+            return new Message(type, data);
         }
     }
 
