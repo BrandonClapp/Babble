@@ -68,7 +68,8 @@ namespace Client
         private void ChannelCreatedHandler(string name, int id)
         {
             Dispatcher.Invoke(() => {
-                this.UserAreaTree.Items.Insert(id, new TreeViewItem { IsExpanded = true, Header = name }); 
+                this.UserAreaTree.Items.Insert(id, new TreeViewItem { IsExpanded = true, Header = name });
+                AddActivity("Channel " + id + " created");
             });
         }
 
@@ -76,13 +77,16 @@ namespace Client
         {
             Dispatcher.Invoke(() => {
                 (this.UserAreaTree.Items[channel] as TreeViewItem).Items.Add(username);
+                AddActivity(string.Format("{0} Connected", username));
             });
         }
 
         private void SomeUserDisconnectedHandler(string username, int channel)
         {
             Dispatcher.Invoke(() => { 
-                (this.UserAreaTree.Items[channel] as TreeViewItem).Items.Remove(username); 
+                (this.UserAreaTree.Items[channel] as TreeViewItem).Items.Remove(username);
+                AddActivity(string.Format("{0} Disconnected", username));
+
             });
         }
 

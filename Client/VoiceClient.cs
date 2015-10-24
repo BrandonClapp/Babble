@@ -6,157 +6,109 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 using System.Runtime.InteropServices;
-using Newtonsoft.Json;
 using System.Windows;
 using FragLabs.Audio.Codecs;
 using System.Windows.Threading;
+using Babble.Core;
 
 namespace Client
 {
     class VoiceClient
     {
         public IntPtr Owner { get; set; }
-        public TcpClient Client = new TcpClient();
-        public User User = new User();
+        private NetworkClient NetworkClient;
+        public UserInfo User = new UserInfo();
         public event Action<string, int> SomeUserConnected;
         public event Action<string, int> SomeUserDisconnected;
         public event Action<string, int> ChannelCreated;
         public event Action<bool> Connected;
         public event Action Disconnected;
+        public ISoundEngine SoundEngine = new DummySoundEngine();
 
         public void Transmit()
         {
 
-            Sound.Record(Owner, b => {
-                if (GetAsyncKeyState(0x11) == 0 || !Client.Connected) return;
-                WriteMessage(new { Type = "Voice", Data = b });
+            Sound.Record(Owner, b =>
+            {
+                if (GetAsyncKeyState(0x11) == 0 || NetworkClient.IsDisconnected) return;
+                WriteMessage(Message.CreateVoiceMessage(Convert.ToBase64String(b)));
             });
-            //var mic = Microphone.Default;
-            //if (mic != null)
+            //SoundEngine.Record((b) =>
             //{
-            //    mic.Start();
-            //    var buffer = new byte[3840]; // mic.GetSampleSizeInBytes(TimeSpan.FromMilliseconds(100))
-            //    while (true)
-            //    {
-            //        FrameworkDispatcher.Update();
-            //        for (var bytesRead = 0; bytesRead < 3528; ) // buffer.Length
-            //            bytesRead += mic.GetData(buffer, bytesRead, buffer.Length - bytesRead);
-            //        if (GetAsyncKeyState(0x11) == 0 || !Client.Connected) continue;
-            //        // WriteMessage(new { Type = "Voice", Data = G711Audio.ALawEncoder.ALawEncode(buffer) }); original
-            //        OpusEncoder encoder = OpusEncoder.Create(48000, 1, FragLabs.Audio.Codecs.Opus.Application.Voip);
-            //        int encodedLength;
-            //        byte[] encodedBuffer = encoder.Encode(buffer, buffer.Length, out encodedLength);
-            //        byte[] trimmedBuffer = new byte[encodedLength];
-            //        Array.Copy(encodedBuffer, trimmedBuffer, encodedLength);
-
-            //        WriteMessage(new { Type = "Voice", Data = trimmedBuffer });
-            //    }
-            //}
-            //else { MessageBox.Show("Could not detect default mic"); }
+            //    if (GetAsyncKeyState(0x11) == 0 || NetworkClient.IsDisconnected) return;
+            //    WriteMessage(Message.CreateVoiceMessage(Convert.ToBase64String(b)));
+            //});
         }
 
         private object WriteLock = new object();
-        public void WriteMessage(object o)
+        public void WriteMessage(Message message)
         {
-            byte[] message = UTF8Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(o));
             lock(WriteLock)
             {
-                Client.GetStream().Write(BitConverter.GetBytes((short)message.Length), 0, 2); // first two bytes
-                Client.GetStream().Write(message, 0, message.Length); // string of json
-                Client.GetStream().Flush();
+                NetworkClient.WriteMessage(message);
             }
         }
 
-        public IEnumerable<dynamic> ReadMessages()
+        public Message ReadMessage()
         {
-            byte[] incomingMesssage = new byte[1<<14];
-            int offset = 0;
-
-            for (int numberOfBytesRead = 0; ; )
-            {
-                numberOfBytesRead = Client.GetStream().Read(incomingMesssage, offset, incomingMesssage.Length - offset); // removed try catch here
-
-                offset += numberOfBytesRead;
-                while (offset >= 2 && offset >= BitConverter.ToInt16(incomingMesssage, 0) + 2)
-                {
-                    short messageLength = BitConverter.ToInt16(incomingMesssage, 0);
-                    yield return JsonConvert.DeserializeObject<dynamic>
-                        (UTF8Encoding.UTF8.GetString(incomingMesssage, 2, messageLength));
-                    offset -= (messageLength + 2);
-                    Array.Copy(incomingMesssage, messageLength + 2, incomingMesssage, 0, offset);
-                }
-            }
+            return NetworkClient.ReadMessage();
         }
 
         public void StartReading()
         {
-            try
+            while (!NetworkClient.IsDisconnected)
             {
-                foreach (dynamic message in ReadMessages())
+                var message = ReadMessage();
+                if (message == null)
                 {
-                    switch (message.Type.Value as string)
-                    {
-                        case "Voice":
-                            //byte[] decodedByte;
-                            //G711Audio.ALawDecoder.ALawDecode(Convert.FromBase64String(message.Data.Value as string), out decodedByte);
-                            //OpusDecoder decoder = OpusDecoder.Create(48000, 1);
-                            //byte[] encodedBuffer = Convert.FromBase64String(message.Data.Value as string);
-                            //int decodedLength;
-                            //byte[] decodedBuffer = decoder.Decode(encodedBuffer, encodedBuffer.Length, out decodedLength);
-                            //byte[] trimmedBuffer = new byte[decodedLength];
-                            //Array.Copy(decodedBuffer, trimmedBuffer, decodedLength);
-                            HandleVoiceMessage(Convert.FromBase64String(message.Data.Value as string));
-                            break;
-                        case "SomeUserConnected":
-                            SomeUserConnected(message.Username.Value as string, (int)message.Channel.Value);
-                            break;
-                        case "SomeUserDisconnected":
-                            SomeUserDisconnected(message.Username.Value as string, (int)message.Channel.Value);
-                            break;
-                        case "ChannelCreated":
-                            ChannelCreated(message.ChannelName.Value as string, (int)message.ChannelId.Value );
-                            break;
-                    }
+                    return;
+                }
+
+                switch (message.Type)
+                {
+                    case MessageType.Voice:
+                        HandleVoiceMessage(Convert.FromBase64String(message.Data as string));
+                        break;
+                    case MessageType.UserConnected:
+                        SomeUserConnected(message.Data.Username.Value as string, (int)message.Data.ChannelId.Value);
+                        break;
+                    case MessageType.UserDisconnected:
+                        SomeUserDisconnected(message.Data.Username.Value as string, (int)message.Data.ChannelId.Value);
+                        break;
+                    case MessageType.ChannelCreated:
+                        ChannelCreated(message.Data.Name.Value as string, (int)message.Data.Id.Value);
+                        break;
                 }
             }
-            catch { }
         }
 
         private void HandleVoiceMessage(byte[] buff)
         {
             Sound.Play(Owner, buff);
-            //FrameworkDispatcher.Update();
-            //var sound = new SoundEffect(buff, Microphone.Default.SampleRate, AudioChannels.Mono);
-            //sound.Play();
-        }
-
-        private void HandleChatMessage(dynamic message)
-        {
+            //SoundEngine.Play(buff);
         }
 
         public void SendChatMessage(string chatMessage)
         {
-            WriteMessage(new { Type = "Chat", Username = this.User.Username, Message = chatMessage });
+            //WriteMessage(new { Type = "Chat", Username = this.User.Username, Message = chatMessage });
         }
 
         public void SendCredentials()
         {
-            WriteMessage(new { Type="Credentials", Username=this.User.Username, Password=this.User.Password });
-            WriteMessage(new { Type="Hello" });
+            WriteMessage(Message.CreateCredentialsMessage(new UserInfo { Username = this.User.Username, Password = this.User.Password }));
+            WriteMessage(Message.CreateHelloMessage());
         }
 
         public void Connect(string host, int port)
         {
             try
             {
-                Client = new TcpClient();
-
-                IAsyncResult ar = Client.BeginConnect(host, port, null, null);
-                using (WaitHandle wh = ar.AsyncWaitHandle)
+                var tcpClient = new TcpClient(host, port);
+                if (NetworkClient != null)
                 {
-                    if (!ar.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(2), false)) throw new TimeoutException();
-                    Client.EndConnect(ar);
+                    Disconnect();
                 }
+                NetworkClient = new NetworkClient(tcpClient);
 
                 ThreadStart ts = new ThreadStart(StartReading);
                 Thread thread = new Thread(ts);
@@ -173,12 +125,15 @@ namespace Client
 
         public void Disconnect()
         {
-            if (Client.Connected)
+            if (NetworkClient == null)
             {
-                Client.GetStream().Close();
-                Client.Close();
-                Disconnected();
+                return;
             }
+
+            NetworkClient.WriteMessage(Message.CreateUserDisconnectedMessage(User));
+
+            NetworkClient.Disconnect();
+            NetworkClient = null;
         }
 
         [DllImport("User32.dll")]
