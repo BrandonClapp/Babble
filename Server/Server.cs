@@ -54,6 +54,7 @@ namespace Server
 
                     switch (message.Type)
                     {
+                        // todo: refactor
                         case MessageType.Chat:
                             BroadcastData(client, message, true);
                             break;
