@@ -11,24 +11,34 @@ namespace Server
 {
     class Server
     {
-        private int Port = 8888;
-        private IPAddress IPAddress = IPAddress.Any;
-        private List<NetworkClient> ClientList = new List<NetworkClient>();
+        private readonly int Port = 8888;
+        private readonly IPAddress IPAddress = IPAddress.Any;
+        private readonly List<NetworkClient> ClientList = new List<NetworkClient>();
+        private readonly List<Channel> Channels = new List<Channel>();
 
         public void Start()
         {
+            InitDefaultChannels();
+
             TcpListener listener = new TcpListener(IPAddress, Port);
             listener.Start();
             while (true)
             {
                 var client = new NetworkClient(listener.AcceptTcpClient());
-
-                Console.WriteLine("User Connected");
-
                 ClientList.Add(client);
-
                 HandleConnectedClient(client);
+
+                Console.WriteLine("User Connected. Now you have {0} users connected", ClientList.Count);
             }
+        }
+
+        // Init default channels
+        private void InitDefaultChannels()
+        {
+            Channels.Clear();
+            Channels.Add(new Channel { Name = "Default Channel", Id = 0 });
+            Channels.Add(new Channel { Name = "Another Channel", Id = 1 });
+            Channels.Add(new Channel { Name = "Again Channel", Id = 2 });
         }
 
         private void HandleConnectedClient(NetworkClient client)
@@ -37,19 +47,10 @@ namespace Server
             {
                 while (true)
                 {
-                    if (client.IsDisconnected)
-                    {
-                        client.Disconnect();
-                        ClientList.Remove(client);
-                        BroadcastData(client, Message.CreateUserDisconnectedMessage(client.UserInfo));
-                        Console.WriteLine("User Disconnected");
-                        return;
-                    }
-
                     var message = client.ReadMessage();
                     if (message == null)
                     {
-                        return;
+                        break;
                     }
 
                     switch (message.Type)
@@ -60,40 +61,73 @@ namespace Server
                         case MessageType.Voice:
                             BroadcastData(client, message, true);
                             break;
-                        case MessageType.Credentials:
+                        case MessageType.Credential:
                             CredentialDataReceived(client, message);
                             break;
                         case MessageType.Hello:
                             HelloReceived(client);
                             break;
+                        case MessageType.RequestChannels:
+                            client.WriteMessage(new Message(MessageType.RequestChannels, Channels));
+                            break;
                     }
                 }
+
+                // If the handler no longer running, do some clean up here
+                client.Disconnect();
+                ClientList.Remove(client);
+                Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.UserInfo.Username, ClientList.Count);
             }, TaskCreationOptions.LongRunning);
         }
 
         private void HelloReceived(NetworkClient client)
         {
-            Console.WriteLine("hello");
-            client.WriteMessage(Message.CreateChannelCreatedMessage(new Channel { Name = "Default Channel", Id = 0 }));
-            client.WriteMessage(Message.CreateChannelCreatedMessage(new Channel { Name = "Another Channel", Id = 1 }));
-            client.WriteMessage(Message.CreateChannelCreatedMessage(new Channel { Name = "Again Channel", Id = 2 }));
+            //Console.WriteLine("hello");
+            //client.WriteMessage(new Message(MessageType.ChannelCreated, new Channel { Name = "Default Channel", Id = 0 }));
+            //client.WriteMessage(new Message(MessageType.ChannelCreated, new Channel { Name = "Another Channel", Id = 1 }));
+            //client.WriteMessage(new Message(MessageType.ChannelCreated, new Channel { Name = "Again Channel", Id = 2 }));
 
-            BroadcastData(client, Message.CreateUserConnectedMessage(client.UserInfo), true);
+            //BroadcastData(client, new Message(MessageType.UserConnected, client.UserInfo), true);
         }
 
         private void CredentialDataReceived(NetworkClient client, Message message)
         {
+            var credential = message.GetData<UserCredential>();
+            var userInfo = new UserInfo();
+            client.UserInfo = userInfo;
+            var result = new UserCredentialResult();
             // Handle credential authorization
-            if (string.IsNullOrWhiteSpace(message.Data.Username.Value))
+            if (string.IsNullOrWhiteSpace(credential.Username))
             {
-                message.Data.Username.Value = "Anon";
-                message.Data.Password.Value = string.Empty;
-            }
-            client.UserInfo = new UserInfo();
-            client.UserInfo.Username = message.Data.Username.Value as string;
-            client.UserInfo.Password = message.Data.Password.Value as string;
+                userInfo.Username = "Anon#" + new Random().Next(5000);
+                result.IsAuthenticated = true;
+                result.Message = "Great success!";
 
-            Console.WriteLine(client.UserInfo.Username + " " + client.UserInfo.Password);
+                //AddUserToChannel(userInfo);
+                BroadcastData(client, new Message(MessageType.UserConnected, userInfo));
+            }
+            else
+            {
+                // TODO: handle actual username and password
+
+                result.IsAuthenticated = false;
+                result.Message = "Brandon fix this!";
+            }
+
+            client.WriteMessage(new Message(MessageType.CredentialResult, result));
+        }
+
+        private void AddUserToChannel(UserInfo userInfo)
+        {
+            var channel = Channels.FirstOrDefault(c => c.Id == userInfo.ChannelId);
+            if (channel == null)
+            {
+                Channels[0].Users.Add(userInfo);
+            }
+            else
+            {
+                channel.Users.Add(userInfo);
+            }
         }
 
         private void BroadcastData(NetworkClient client, Message message, bool includeSelf = false)
@@ -106,7 +140,7 @@ namespace Server
                     {
                         return;
                     }
-                    Console.WriteLine("Broadcasting: " + message.Type);
+                    Console.WriteLine("Broadcasting: {0}", message.ToJson());
                     c.WriteMessage(message);
                 }
                 catch (Exception ex)

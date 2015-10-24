@@ -93,7 +93,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Channel.cs" />
     <Compile Include="Sound.cs" />
     <Compile Include="VoiceClient.cs" />
     <Page Include="VoiceClientGUI.xaml">

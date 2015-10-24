@@ -6,6 +6,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System;
 using System.Windows.Interop;
+using Babble.Core;
+using System.Linq;
 
 namespace Client
 {
@@ -15,23 +17,33 @@ namespace Client
 
         public VoiceClientGUI()
         {
-            Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";lib");
+            //Environment.SetEnvironmentVariable("PATH", Environment.GetEnvironmentVariable("PATH") + ";lib");
 
             client.SomeUserConnected += SomeUserConnectedHandler;
             client.SomeUserDisconnected += SomeUserDisconnectedHandler;
             client.ChannelCreated += ChannelCreatedHandler;
+            client.RefreshChannels += RefreshChannelsHandler;
             client.Connected += ConnectedHandler;
             client.Disconnected += DisconnectedHandler;
+
             
             InitializeComponent();
         }
 
-        private void ConnectedHandler(bool successful)
+        
+
+        private void ConnectedHandler(bool successful, string message)
         {
             Dispatcher.Invoke(() =>
             {
-                if (successful) AddActivity("Connected");
-                else MessageBox.Show("Could not connect to host.");
+                if (successful)
+                {
+                    AddActivity("Connected: Message From Host: " + message);
+                }
+                else
+                {
+                    MessageBox.Show("Could not connect to host. Error: " + message);
+                }
             });
         }
 
@@ -53,10 +65,8 @@ namespace Client
                     var host = ncw.Host;
                     var port = ncw.Port;
                     AddActivity("Attempting to connect to " + host + ":" + port + ".");
-                    client.User.Username = ncw.Username;
-                    client.User.Password = ncw.Password;
                     client.Owner = new WindowInteropHelper(this).Handle;
-                    client.Connect(host, port);
+                    client.Connect(host, port, ncw.Username, ncw.Password);
                 }
                 catch
                 {
@@ -70,6 +80,31 @@ namespace Client
             Dispatcher.Invoke(() => {
                 this.UserAreaTree.Items.Insert(id, new TreeViewItem { IsExpanded = true, Header = name });
                 AddActivity("Channel " + id + " created");
+            });
+        }
+
+        private void RefreshChannelsHandler(List<Channel> obj)
+        {
+            Dispatcher.Invoke(() => {
+                this.UserAreaTree.Items.Clear();
+                foreach (var channel in obj)
+                {
+                    var channelTreeItem = new TreeViewItem();
+                    channelTreeItem.IsExpanded = true;
+                    channelTreeItem.Header = channel.Id + " : " + channel.Name;
+                    if (channel.Users != null && channel.Users.Any())
+                    {
+                        foreach (var user in channel.Users)
+                        {
+                            var userTreeItem = new TreeViewItem();
+                            userTreeItem.Header = user.Username;
+                            channelTreeItem.Items.Add(userTreeItem);
+                        }
+                    }
+                    
+                    this.UserAreaTree.Items.Add(channelTreeItem);
+                }
+                AddActivity("Ain't nobody dope as me I'm dressed so fresh so clean");
             });
         }
 
