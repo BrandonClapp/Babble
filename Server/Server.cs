@@ -47,7 +47,6 @@ namespace Server
             {
                 while (true)
                 {
-<<<<<<< HEAD
                     if (client.IsDisconnected)
                     {
                         client.Disconnect();
@@ -57,8 +56,6 @@ namespace Server
                         return;
                     }
 
-=======
->>>>>>> 670b4b83e815863b2149d59784a73472360d7342
                     var message = client.ReadMessage();
                     if (message == null)
                     {
@@ -95,21 +92,13 @@ namespace Server
 
         private void HelloReceived(NetworkClient client)
         {
-<<<<<<< HEAD
-            Console.WriteLine("hello");
-            client.WriteMessage(Message.Create(MessageType.ChannelCreated, new Channel { Name = "Default Channel", Id = 0 }));
-            client.WriteMessage(Message.Create(MessageType.ChannelCreated, new Channel { Name = "Another Channel", Id = 1 }));
-            client.WriteMessage(Message.Create(MessageType.ChannelCreated, new Channel { Name = "Again Channel", Id = 2 }));
 
-            BroadcastData(client, Message.Create(MessageType.UserConnected, client.UserInfo), true);
-=======
             //Console.WriteLine("hello");
             //client.WriteMessage(new Message(MessageType.ChannelCreated, new Channel { Name = "Default Channel", Id = 0 }));
             //client.WriteMessage(new Message(MessageType.ChannelCreated, new Channel { Name = "Another Channel", Id = 1 }));
             //client.WriteMessage(new Message(MessageType.ChannelCreated, new Channel { Name = "Again Channel", Id = 2 }));
 
             //BroadcastData(client, new Message(MessageType.UserConnected, client.UserInfo), true);
->>>>>>> 670b4b83e815863b2149d59784a73472360d7342
         }
 
         private void CredentialDataReceived(NetworkClient client, Message message)

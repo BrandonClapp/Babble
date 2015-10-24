@@ -24,18 +24,17 @@ namespace Babble.Core
 
     public class Message
     {
+        public Message()
+        {
 
-<<<<<<< HEAD
-        [JsonConstructor]
-        private Message(MessageType type, dynamic data = null)
-=======
+        }
+
         public Message(MessageType type) : this(type, null)
         {
 
         }
 
         public Message(MessageType type, dynamic data)
->>>>>>> 670b4b83e815863b2149d59784a73472360d7342
         {
             Type = type;
             Data = data;
@@ -61,11 +60,6 @@ namespace Babble.Core
                 return jObjectData.ToObject<T>();
             }
 
-<<<<<<< HEAD
-        public static Message Create(MessageType type, dynamic data = null)
-        {
-            return new Message(type, data);
-=======
             var jArrayData = Data as Newtonsoft.Json.Linq.JArray;
             if (jArrayData != null)
             {
@@ -74,6 +68,11 @@ namespace Babble.Core
 
             // otherwise just return data itself
             return Data;
+        }
+
+        public static Message Create(MessageType type, dynamic data = null)
+        {
+            return new Message(type, data);
         }
 
         public string ToJson()
@@ -86,7 +85,6 @@ namespace Babble.Core
         {
             var message = JsonConvert.DeserializeObject<Message>(json);
             return message;
->>>>>>> 670b4b83e815863b2149d59784a73472360d7342
         }
     }
 

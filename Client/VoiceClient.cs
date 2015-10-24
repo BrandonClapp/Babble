@@ -36,13 +36,8 @@ namespace Client
             //});
             SoundEngine.Record((b) =>
             {
-<<<<<<< HEAD
-                if (GetAsyncKeyState(0x11) == 0 || NetworkClient.IsDisconnected) return;
-                WriteMessage(Message.Create(MessageType.Voice, (Convert.ToBase64String(b))));
-=======
                 if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
                 WriteMessage(new Message(MessageType.Voice, Convert.ToBase64String(b)));
->>>>>>> 670b4b83e815863b2149d59784a73472360d7342
             });
         }
 
@@ -106,17 +101,8 @@ namespace Client
             //WriteMessage(new { Type = "Chat", Username = this.User.Username, Message = chatMessage });
         }
 
-<<<<<<< HEAD
-        public void SendCredentials()
-        {
-            WriteMessage(Message.Create(MessageType.Credentials, new UserInfo { Username = this.User.Username, Password = this.User.Password }));
-            WriteMessage(Message.Create(MessageType.Hello));
-        }
-
-        public void Connect(string host, int port)
-=======
         public void Connect(string host, int port, string username, string password)
->>>>>>> 670b4b83e815863b2149d59784a73472360d7342
+
         {
             if (Client != null)
             {
@@ -152,14 +138,10 @@ namespace Client
                 return;
             }
 
-<<<<<<< HEAD
-            NetworkClient.WriteMessage(Message.Create(MessageType.UserDisconnected, User));
-=======
             Client.WriteMessage(new Message(MessageType.UserDisconnected, User));
 
             Client.Disconnect();
             Client = null;
->>>>>>> 670b4b83e815863b2149d59784a73472360d7342
 
             Disconnected();
         }
