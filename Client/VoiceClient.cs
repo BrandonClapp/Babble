@@ -140,7 +140,7 @@ namespace Client
 
             if (!Client.IsDisconnected)
             {
-                Client.WriteMessage(new Message(MessageType.UserDisconnected, User));
+                Client.WriteMessage(Message.Create(MessageType.UserDisconnected, User));
             }
 
 

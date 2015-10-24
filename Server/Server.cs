@@ -69,7 +69,7 @@ namespace Server
                             HelloReceived(client);
                             break;
                         case MessageType.RequestChannels:
-                            client.WriteMessage(new Message(MessageType.RequestChannels, Channels));
+                            client.WriteMessage(Message.Create(MessageType.RequestChannels, Channels));
                             break;
                     }
                 }
@@ -101,7 +101,7 @@ namespace Server
                 result.Message = "Great success!";
 
                 AddUserToChannel(userInfo);
-                BroadcastData(client, new Message(MessageType.UserConnected, userInfo));
+                BroadcastData(client, Message.Create(MessageType.UserConnected, userInfo));
             }
             else
             {
@@ -111,7 +111,7 @@ namespace Server
                 result.Message = "Brandon fix this!";
             }
 
-            client.WriteMessage(new Message(MessageType.CredentialResult, result));
+            client.WriteMessage(Message.Create(MessageType.CredentialResult, result));
         }
 
         private void AddUserToChannel(UserInfo userInfo)
@@ -145,7 +145,9 @@ namespace Server
                     {
                         return;
                     }
+
                     Console.WriteLine("Broadcasting: {0}", message.Type);
+
                     c.WriteMessage(message);
                 }
                 catch (Exception ex)
