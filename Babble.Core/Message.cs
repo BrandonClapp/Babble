@@ -24,17 +24,9 @@ namespace Babble.Core
 
     public class Message
     {
-        public Message()
-        {
 
-        }
-
-        public Message(MessageType type) : this(type, null)
-        {
-
-        }
-
-        public Message(MessageType type, dynamic data)
+        [JsonConstructor]
+        private Message(MessageType type, dynamic data = null)
         {
             Type = type;
             Data = data;
