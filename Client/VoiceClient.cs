@@ -138,7 +138,11 @@ namespace Client
                 return;
             }
 
-            Client.WriteMessage(new Message(MessageType.UserDisconnected, User));
+            if (!Client.IsDisconnected)
+            {
+                Client.WriteMessage(new Message(MessageType.UserDisconnected, User));
+            }
+
 
             Client.Disconnect();
             Client = null;

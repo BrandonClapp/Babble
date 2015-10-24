@@ -51,6 +51,7 @@ namespace Client
         {
             Dispatcher.Invoke(() => {
                 this.UserAreaTree.Items.Clear();
+                AddActivity("You are now disconnected");
             });
         }
 
@@ -61,16 +62,15 @@ namespace Client
             {
                 try
                 {
-                    Disconnect_Click(sender, e);
                     var host = ncw.Host;
                     var port = ncw.Port;
                     AddActivity("Attempting to connect to " + host + ":" + port + ".");
                     client.Owner = new WindowInteropHelper(this).Handle;
                     client.Connect(host, port, ncw.Username, ncw.Password);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    AddActivity("Invalid IP or port.");
+                    AddActivity(ex.Message);
                 }
             }
         }
@@ -128,6 +128,7 @@ namespace Client
         public void AddActivity(string s)
         {
             ActivityTextBox.Text += "\n" + s;
+            ActivityTextBox.ScrollToEnd();
         }
 
         private void Disconnect_Click(object sender, RoutedEventArgs e)

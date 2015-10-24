@@ -31,6 +31,6 @@
         </Grid>
 
         <GridSplitter Grid.Row="1" VerticalAlignment="Bottom" Height="3" HorizontalAlignment="Stretch" Background="Black" />
-        <TextBox x:Name="ActivityTextBox" Grid.Row="2" Background="White" Text="Thank you for downloading Voice Client." IsReadOnly="True"/>
+        <TextBox x:Name="ActivityTextBox" Grid.Row="2" Background="White" Text="Thank you for downloading Voice Client." IsReadOnly="True" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
     </Grid>
 </Window>
