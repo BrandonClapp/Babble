@@ -24,8 +24,10 @@ namespace Client.ViewModels
 
             ConnectCommand = new DelegateCommand(ConnectCommandHandler);
             DisconnectCommand = new DelegateCommand(DisconnectCommandHandler);
+            JoinChannelCommand = new DelegateCommand(JoinChannelCommandHandler);
+            CreateChannelCommand = new DelegateCommand(CreateChannelCommandHandler);
 
-            
+
         }
 
         private ChannelTreeViewModel _ChannelTreeViewModel;
@@ -42,6 +44,13 @@ namespace Client.ViewModels
             set { _Activity = value;OnPropertyChanged(nameof(Activity)); }
         }
 
+        private bool _IsConnected;
+        public bool IsConnected
+        {
+            get { return _IsConnected; }
+            set { _IsConnected = value;OnPropertyChanged(nameof(IsConnected)); }
+        }
+
         public ICommand ConnectCommand { get; private set; }
         private void ConnectCommandHandler(object state)
         {
@@ -54,10 +63,12 @@ namespace Client.ViewModels
                     var port = ncw.Port;
                     AddActivity("Attempting to connect to " + host + ":" + port + ".");
                     client.Connect(host, port, ncw.Username, ncw.Password);
+                    IsConnected = true;
                 }
                 catch (Exception ex)
                 {
                     AddActivity(ex.Message);
+                    IsConnected = false;
                 }
             }
         }
@@ -68,6 +79,23 @@ namespace Client.ViewModels
             this.client.Disconnect();
             ChannelTreeViewModel = null;
             AddActivity("Disconnected");
+            IsConnected = false;
+        }
+
+        public ICommand JoinChannelCommand { get; private set; }
+        private void JoinChannelCommandHandler(object state)
+        {
+        }
+
+        public ICommand CreateChannelCommand { get; private set; }
+        private void CreateChannelCommandHandler(object state)
+        {
+            NewChannelWindow window = new NewChannelWindow(System.Windows.Application.Current.MainWindow);
+            if (window.ShowDialog() == true)
+            {
+                var channelName = window.ChannelNameTextBox.Text;
+                client.WriteMessage(Message.Create(MessageType.ChannelCreated, new Channel() { Name = channelName }));
+            }
         }
 
         private void ConnectedHandler(bool successful, string message)

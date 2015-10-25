@@ -21,11 +21,13 @@
             <RowDefinition Height="130" />
         </Grid.RowDefinitions>
         <Menu Grid.Row="0" Height="24">
-            <MenuItem Header="Connections" VerticalAlignment="Center">
-                <MenuItem Header="New Connection" 
-                          Command="{Binding ConnectCommand}"/>
-                <MenuItem Header="Disconnect"
-                          Command="{Binding DisconnectCommand}"/>
+            <MenuItem Header="Connections">
+                <MenuItem Header="New Connection" Command="{Binding ConnectCommand}"/>
+                <MenuItem Header="Disconnect" Command="{Binding DisconnectCommand}"/>
+            </MenuItem>
+            <MenuItem Header="Channels" IsEnabled="{Binding IsConnected}">
+                <MenuItem Header="Join - comming soon!" Command="{Binding JoinChannelCommand}"/>
+                <MenuItem Header="Create" Command="{Binding CreateChannelCommand}"/>
             </MenuItem>
         </Menu>
 

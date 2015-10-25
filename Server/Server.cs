@@ -71,6 +71,12 @@ namespace Server
                         case MessageType.RequestChannels:
                             client.WriteMessage(Message.Create(MessageType.RequestChannels, Channels));
                             break;
+                        case MessageType.ChannelCreated:
+                            var channel = message.GetData<Channel>();
+                            channel.Id = Channels.Select(c => c.Id).Max() + 1;
+                            AddChannel(channel);
+                            client.WriteMessage(Message.Create(MessageType.ChannelCreated, channel));
+                            break;
                     }
                 }
 
@@ -113,6 +119,11 @@ namespace Server
             }
 
             client.WriteMessage(Message.Create(MessageType.CredentialResult, result));
+        }
+
+        private void AddChannel(Channel channel)
+        {
+            Channels.Add(channel);
         }
 
         private void AddUserToChannel(UserInfo userInfo)
