@@ -105,11 +105,6 @@ namespace Client.ViewModels
         private void DisconnectCommandHandler(object state)
         {
             this.client.Disconnect();
-            ChannelTreeViewModel = null;
-            AddActivity("Disconnected");
-            IsConnected = false;
-            periodicUpdateTimer.Stop();
-
         }
 
         public ICommand JoinChannelCommand { get; private set; }
@@ -175,7 +170,13 @@ namespace Client.ViewModels
 
         private void DisconnectedHandler()
         {
-            DisconnectCommandHandler(null);
+            dispatcher.Invoke(() =>
+            {
+                ChannelTreeViewModel = null;
+                IsConnected = false;
+                AddActivity("Disconnected");
+                periodicUpdateTimer.Stop();
+            });
         }
 
         private void ChannelCreatedHandler(Channel channel)
