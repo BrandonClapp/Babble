@@ -102,8 +102,7 @@ namespace Server
             // todo: validation that the user can join target channel.
             AddUserToChannel(client.UserInfo, (int)message.Data);
 
-            // broadcast refresh channels to all.
-            BroadcastData(client, Message.Create(MessageType.GetAllChannelsResponse, Channels), true);
+            BroadcastData(client, Message.Create(MessageType.UserChangeChannelResponse, client.UserInfo), true);
         }
 
         private void HelloReceived(NetworkClient client)

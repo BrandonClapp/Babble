@@ -21,6 +21,7 @@ namespace Client.ViewModels
             client.SomeUserConnected += SomeUserConnectedHandler;
             client.SomeUserDisconnected += SomeUserDisconnectedHandler;
             client.SomeUserTalking += SomeUserTalkingHandler;
+            client.SomeUserChangedChannel += SomeUserChangedChannelHandler;
             client.ChannelCreated += ChannelCreatedHandler;
             client.RefreshChannels += RefreshChannelsHandler;
             client.Connected += ConnectedHandler;
@@ -111,16 +112,6 @@ namespace Client.ViewModels
         private void JoinChannelCommandHandler(object state)
         {
             var channel = state as ChannelViewModel;
-
-            var user = FindUser(UserInfo.Id);
-            if (user == null)
-            {
-                AddActivity("Unable to find the logged in user to join to channel");
-                return;
-            }
-
-            RemoveUserFromChannels(user);
-            channel.Users.Add(user);
             client.WriteMessage(Message.Create(MessageType.UserChangeChannelRequest, channel.Id));
         }
 
@@ -207,6 +198,14 @@ namespace Client.ViewModels
             user.IsTalking = true;
         }
 
+        private void SomeUserChangedChannelHandler(UserInfo userInfo)
+        {
+            dispatcher.Invoke(() =>
+            {
+                RemoveUserFromChannels(userInfo);
+                AddUserToChannel(userInfo);
+            });
+        }
 
         public void AddActivity(string s)
         {
@@ -231,8 +230,27 @@ namespace Client.ViewModels
             return users.ToList();
         }
 
-        private void RemoveUserFromChannels(UserInfoViewModel user)
+        private void AddUserToChannel(UserInfo userInfo)
         {
+            var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userInfo.ChannelId);
+            if (channel == null)
+            {
+                AddActivity($"Unable to find channel {channel.Id} to add the user to");
+                return;
+            }
+
+            channel.Users.Add(new UserInfoViewModel(userInfo));
+        }
+
+        private void RemoveUserFromChannels(UserInfo userInfo)
+        {
+            var user = FindUser(userInfo.Id);
+            if (user == null)
+            {
+                AddActivity($"Unable to find user {user.Username} from channel {user.ChannelId} in order to remove user");
+                return;
+            }
+
             foreach (var channel in ChannelTreeViewModel.Channels)
             {
                 channel.Users.Remove(user);

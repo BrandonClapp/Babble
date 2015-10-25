@@ -19,6 +19,7 @@ namespace Client
         public event Action<UserInfo> SomeUserConnected;
         public event Action<UserInfo> SomeUserDisconnected;
         public event Action<UserInfo> SomeUserTalking;
+        public event Action<UserInfo> SomeUserChangedChannel;
         public event Action<Channel> ChannelCreated;
         public event Action<List<Channel>> RefreshChannels;
         public event Action<bool, string> Connected;
@@ -88,9 +89,8 @@ namespace Client
                         RefreshChannels(channels);
                         break;
                     case MessageType.UserChangeChannelResponse:
-                        // youarehere
-                        var targetChannel = message.GetData<Channel>();
-                        //RefreshChannels(channel);
+                        var userThatChangedChannel = message.GetData<UserInfo>();
+                        SomeUserChangedChannel(userThatChangedChannel);
                         break;
                 }
             }
