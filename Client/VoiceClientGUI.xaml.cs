@@ -46,5 +46,22 @@ namespace Client
                 e.Handled = true;
             }
         }
+
+        private void TreeItem_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var uiElement = sender as FrameworkElement;
+            if (uiElement == null) { return; }
+            var channelVM = uiElement.DataContext as ChannelViewModel;
+            if (channelVM != null)
+            {
+                channelVM.IsSelected = true;
+                return;
+            }
+            var userVM = uiElement.DataContext as UserInfoViewModel;
+            if (userVM != null)
+            {
+                userVM.IsSelected = true;
+            }
+        }
     }
 }

@@ -51,18 +51,28 @@
                         <Setter Property="IsSelected" Value="{Binding IsSelected}"/>
                     </Style>
 
-                    <!-- data template for channels -->
+                    <!-- CHANNEL TREE NODE TEMPLATE -->
                     <HierarchicalDataTemplate DataType="{x:Type local:ChannelViewModel}" ItemsSource="{Binding Users}">
-                        <TextBlock MouseLeftButtonDown="JoinChannel_MouseDoubleClick">
+                        <Grid MouseRightButtonDown="TreeItem_MouseRightButtonDown">
+                            <TextBlock MouseLeftButtonDown="JoinChannel_MouseDoubleClick">
                             <Run Text="{Binding Id, Mode=OneWay}"></Run>
                             <Run Text=" : "></Run>
                             <Run Text="{Binding Name, Mode=OneWay}"></Run>
-                        </TextBlock>
+                            </TextBlock>
+
+                            <Grid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Join"/>
+                                    <MenuItem Header="Rename"/>
+                                    <MenuItem Header="Whack"/>
+                                </ContextMenu>
+                            </Grid.ContextMenu>
+                        </Grid>
                     </HierarchicalDataTemplate>
 
-                    <!-- data template for users -->
+                    <!-- USER TREE NODE TEMPLATE -->
                     <HierarchicalDataTemplate DataType="{x:Type local:UserInfoViewModel}">
-                        <Grid>
+                        <Grid MouseRightButtonDown="TreeItem_MouseRightButtonDown">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
@@ -74,6 +84,12 @@
                                            Visibility="{Binding IsTalking, Converter={StaticResource BoolToVis}}"
                                            Width="10" Height="10"/>
                             <TextBlock Grid.Column="1" Text="{Binding Username, Mode=OneWay}"/>
+
+                            <Grid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Comming Soon! for user specific context menu"/>
+                                </ContextMenu>
+                            </Grid.ContextMenu>
                         </Grid>
                     </HierarchicalDataTemplate>
                 </TreeView.Resources>
