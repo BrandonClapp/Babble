@@ -93,8 +93,18 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DelegateCommand.cs" />
+    <Compile Include="NewChannelWindow.xaml.cs">
+      <DependentUpon>NewChannelWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModels\ChannelTreeViewModel.cs" />
     <Compile Include="Sound.cs" />
+    <Compile Include="ViewModels\VoiceClientViewModel.cs" />
     <Compile Include="VoiceClient.cs" />
+    <Page Include="NewChannelWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="VoiceClientGUI.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

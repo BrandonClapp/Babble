@@ -2,6 +2,12 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Voice Client Alpha Prototype" Height="575" Width="546">
+    <Window.Resources>
+        <!-- storing this main win resources here, styling, stuff -->
+        <Style TargetType="MenuItem">
+            <Setter Property="Height" Value="24"/>
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.Background>
             <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -10,27 +16,78 @@
             </LinearGradientBrush>
         </Grid.Background>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="130" />
         </Grid.RowDefinitions>
-        <Menu Name="TopMenu" Grid.Row="0" HorizontalAlignment="Stretch" Height="24" VerticalAlignment="Top" Background="#FF171514">
-            <MenuItem Header="Connections" VerticalAlignment="Center" Height="24" Foreground="White">
-                <MenuItem Name="NewConnection" Header="New Connection" Height="20" Width="auto" Click="NewConnection_Click" Background="#FFBBF73E" Foreground="Black" />
-                <MenuItem Name="Disconnect" Header="Disconnect" Height="20" Width="auto" Background="#FFBBF73E" Foreground="Black" Click="Disconnect_Click" />
+        <Menu Grid.Row="0" Height="24">
+            <MenuItem Header="Connections">
+                <MenuItem Header="New Connection" Command="{Binding ConnectCommand}"/>
+                <MenuItem Header="Disconnect" Command="{Binding DisconnectCommand}"/>
+            </MenuItem>
+            <MenuItem Header="Channels" IsEnabled="{Binding IsConnected}">
+                <MenuItem Header="Join - comming soon!" Command="{Binding JoinChannelCommand}"/>
+                <MenuItem Header="Create" Command="{Binding CreateChannelCommand}"/>
             </MenuItem>
         </Menu>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Name="Interaction" Width="*" />
-                <ColumnDefinition Name="Information" Width="*"/>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TreeView Name="UserAreaTree" Background="Transparent"/>
+            <TreeView Name="UserAreaTree" 
+                      Background="Transparent" 
+                      DataContext="{Binding ChannelTreeViewModel}"
+                      ItemsSource="{Binding Channels}">
+                <TreeView.Resources>
+                    <!-- default tree view item to expand -->
+                    <Style TargetType="TreeViewItem">
+                        <Setter Property="IsExpanded" Value="True"/>
+                    </Style>
+                </TreeView.Resources>
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate ItemsSource="{Binding Users}">
+                        <TextBlock>
+                            <Run Text="{Binding Id, Mode=OneWay}"></Run>
+                            <Run Text=" : "></Run>
+                            <Run Text="{Binding Name, Mode=OneWay}"></Run>
+                        </TextBlock>
+                        <HierarchicalDataTemplate.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Image Grid.Column="0" Source="images/talk_inactive.png" Margin="0 0 5 0">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsTalking}" Value="True">
+                                                        <Setter Property="Source" Value="images/talk_active.png"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+                                    <TextBlock Grid.Column="1" Text="{Binding Username, Mode=OneWay}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </HierarchicalDataTemplate.ItemTemplate>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
             <GridSplitter Grid.Column="0" HorizontalAlignment="Right" Width="3" VerticalAlignment="Stretch" Background="Black" />
         </Grid>
 
         <GridSplitter Grid.Row="1" VerticalAlignment="Bottom" Height="3" HorizontalAlignment="Stretch" Background="Black" />
-        <TextBox x:Name="ActivityTextBox" Grid.Row="2" Background="White" Text="Thank you for downloading Voice Client." IsReadOnly="True"/>
+        <TextBox Grid.Row="2"
+                 x:Name="ActivityTextBox"
+                 Background="White" 
+                 Text="{Binding Activity}" 
+                 IsReadOnly="True" 
+                 ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                 TextChanged="ActivityTextBox_TextChanged"/>
     </Grid>
 </Window>

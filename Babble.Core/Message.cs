@@ -17,6 +17,7 @@ namespace Babble.Core
         Chat,
         Voice,
         RequestChannels,
+        RequestChannelCreate,
         ChannelCreated,
         UserConnected,
         UserDisconnected,
@@ -119,6 +120,20 @@ namespace Babble.Core
         {
             Users.Remove(user);
             user.ChannelId = -1;
+        }
+    }
+
+    public class VoiceData
+    {
+        public string Username { get; set; }
+        public string Data { get; set; } = string.Empty;
+        public void SetDataFromBytes(byte[] bytes)
+        {
+            Data = Convert.ToBase64String(bytes);
+        }
+        public byte[] GetDataInBytes()
+        {
+            return Convert.FromBase64String(Data);
         }
     }
 }

@@ -74,10 +74,17 @@ namespace Server
                         case MessageType.UserChangeChannelRequest:
                             ChangeChannelRequestReceived(client, message);
                             break;
+                        case MessageType.RequestChannelCreate:
+                            var channel = message.GetData<Channel>();
+                            channel.Id = Channels.Select(c => c.Id).Max() + 1;
+                            AddChannel(channel);
+                            BroadcastData(client, Message.Create(MessageType.ChannelCreated, channel), true);
+                            break;
                     }
                 }
 
                 // If the handler no longer running, do some clean up here
+                BroadcastData(client, Message.Create(MessageType.UserDisconnected, client.UserInfo));
                 client.Disconnect();
                 ClientList.Remove(client);
 
@@ -129,6 +136,11 @@ namespace Server
             }
 
             client.WriteMessage(Message.Create(MessageType.CredentialResult, result));
+        }
+
+        private void AddChannel(Channel channel)
+        {
+            Channels.Add(channel);
         }
 
         private void AddUserToChannel(UserInfo userInfo, int target)

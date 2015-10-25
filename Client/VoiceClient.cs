@@ -15,7 +15,6 @@ namespace Client
 {
     class VoiceClient
     {
-        public IntPtr Owner { get; set; }
         private NetworkClient Client;
         public UserInfo User = new UserInfo();
         public event Action<string, int> SomeUserConnected;
@@ -29,15 +28,14 @@ namespace Client
         public void Transmit()
         {
             SoundEngine.Init();
-            //Sound.Record(Owner, b =>
-            //{
-            //    if (GetAsyncKeyState(0x11) == 0 || NetworkClient.IsDisconnected) return;
-            //    WriteMessage(Message.CreateVoiceMessage(Convert.ToBase64String(b)));
-            //});
+
             SoundEngine.Record((b) =>
             {
                 if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
-                WriteMessage(Message.Create(MessageType.Voice, Convert.ToBase64String(b)));
+                var voiceData = new VoiceData();
+                voiceData.Username = User.Username;
+                voiceData.SetDataFromBytes(b);
+                WriteMessage(Message.Create(MessageType.Voice, voiceData));
             });
         }
 
@@ -68,7 +66,8 @@ namespace Client
                 switch (message.Type)
                 {
                     case MessageType.Voice:
-                        HandleVoiceMessage(Convert.FromBase64String(message.Data as string));
+                        var voiceData = message.GetData<VoiceData>();
+                        HandleVoiceMessage(voiceData.GetDataInBytes());
                         break;
                     case MessageType.UserConnected:
                         var userInfo = message.GetData<UserInfo>();
@@ -97,7 +96,6 @@ namespace Client
 
         private void HandleVoiceMessage(byte[] buff)
         {
-            //Sound.Play(Owner, buff);
             SoundEngine.Play(buff);
         }
 
@@ -143,7 +141,11 @@ namespace Client
                 return;
             }
 
-            Client.WriteMessage(Message.Create(MessageType.UserDisconnected, User));
+            if (!Client.IsDisconnected)
+            {
+                Client.WriteMessage(Message.Create(MessageType.UserDisconnected, User));
+            }
+
 
             Client.Disconnect();
             Client = null;
