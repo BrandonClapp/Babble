@@ -41,8 +41,7 @@ namespace Client
         {
             if (e.ClickCount == 2)
             {
-                var channel = UserAreaTree.SelectedItem;
-                vm.JoinChannelCommand.Execute(channel);
+                vm.JoinChannelCommand.Execute(null);
                 e.Handled = true;
             }
         }

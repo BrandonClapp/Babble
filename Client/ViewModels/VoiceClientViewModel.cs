@@ -111,7 +111,7 @@ namespace Client.ViewModels
         public ICommand JoinChannelCommand { get; private set; }
         private void JoinChannelCommandHandler(object state)
         {
-            var channel = state as ChannelViewModel;
+            var channel = GetSelectedChannel();
             client.WriteMessage(Message.Create(MessageType.UserChangeChannelRequest, channel.Id));
         }
 
@@ -255,6 +255,11 @@ namespace Client.ViewModels
             {
                 channel.Users.Remove(user);
             }
+        }
+
+        private ChannelViewModel GetSelectedChannel()
+        {
+            return ChannelTreeViewModel.Channels.FirstOrDefault(c => c.IsSelected);
         }
     }
 }
