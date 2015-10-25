@@ -12,7 +12,7 @@ namespace Babble.Core
         WaveInEvent waveIn;
         WaveOut waveOut;
         BufferedWaveProvider waveOutProvider;
-        Action<byte[]> Record_Callback;
+        Action<byte[]> RecordCallback;
 
         public void Init()
         {
@@ -30,16 +30,15 @@ namespace Babble.Core
 
         private void WaveIn_DataAvailable(object sender, WaveInEventArgs e)
         {
-            if (Record_Callback != null)
+            if (RecordCallback != null)
             {
-                Record_Callback(e.Buffer);
+                RecordCallback(e.Buffer);
             }
         }
 
-        public void Stop()
+        public void StopRecording()
         {
             waveIn.StopRecording();
-            waveOut.Stop();
         }
 
         public void Play(byte[] data)
@@ -56,7 +55,7 @@ namespace Babble.Core
         {
             try
             {
-                Record_Callback = callback;
+                RecordCallback = callback;
             }
             catch (Exception ex)
             {

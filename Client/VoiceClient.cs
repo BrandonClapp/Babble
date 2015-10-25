@@ -8,6 +8,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using System.Windows;
 using Babble.Core;
+using System.Threading.Tasks;
 
 namespace Client
 {
@@ -22,20 +23,22 @@ namespace Client
         public event Action<List<Channel>> RefreshChannels;
         public event Action<bool, string> Connected;
         public event Action Disconnected;
-        public ISoundEngine SoundEngine = new NAudioSoundEngine();
+        public ISoundEngine SoundEngine;
 
-        public void Transmit()
+        public VoiceClient()
         {
+            SoundEngine = new NAudioSoundEngine();
             SoundEngine.Init();
-            SoundEngine.SetRecordCallback((b) =>
-            {
-                if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
-                var voiceData = new VoiceData();
-                voiceData.UserInfo = UserInfo;
-                voiceData.SetDataFromBytes(b);
-                WriteMessage(Message.Create(MessageType.Voice, voiceData));
-            });
-            SoundEngine.Record();
+            SoundEngine.SetRecordCallback(SoundEngineRecordCallback);
+        }
+
+        private void SoundEngineRecordCallback(byte[] data)
+        {
+            if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
+            var voiceData = new VoiceData();
+            voiceData.UserInfo = UserInfo;
+            voiceData.SetDataFromBytes(data);
+            WriteMessage(Message.Create(MessageType.Voice, voiceData));
         }
 
         private object WriteLock = new object();
@@ -120,12 +123,12 @@ namespace Client
             {
                 UserInfo = credentialResult.UserInfo;
 
-                ThreadStart ts = new ThreadStart(StartReading);
-                Thread thread = new Thread(ts);
-                thread.IsBackground = true;
-                thread.Start();
-                new Thread(Transmit) { IsBackground = true }.Start();
+                Task.Factory.StartNew(() =>
+                {
+                    StartReading();
+                }, TaskCreationOptions.LongRunning);
 
+                SoundEngine.Record();
                 Connected(true, credentialResult.Message);
                 Client.WriteMessage(Message.Create(MessageType.RequestChannels));
             }
@@ -148,7 +151,7 @@ namespace Client
                 Client.WriteMessage(Message.Create(MessageType.UserDisconnected, UserInfo));
             }
 
-
+            SoundEngine.StopRecording();
             Client.Disconnect();
             Client = null;
 

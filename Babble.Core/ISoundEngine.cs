@@ -12,6 +12,6 @@ namespace Babble.Core
         void SetRecordCallback(Action<byte[]> callback);
         void Record();
         void Play(byte[] data);
-        void Stop();
+        void StopRecording();
     }
 }
