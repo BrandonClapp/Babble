@@ -79,11 +79,11 @@ namespace Client
                         var userInfo2 = message.GetData<UserInfo>();
                         SomeUserDisconnected(userInfo2);
                         break;
-                    case MessageType.ChannelCreated:
+                    case MessageType.CreateChannelResponse:
                         var channel = message.GetData<Channel>();
                         ChannelCreated(channel);
                         break;
-                    case MessageType.RequestChannels:
+                    case MessageType.GetAllChannelsResponse:
                         var channels = message.GetData<List<Channel>>();
                         RefreshChannels(channels);
                         break;
@@ -130,7 +130,7 @@ namespace Client
 
                 SoundEngine.Record();
                 Connected(true, response.Message);
-                Client.WriteMessage(Message.Create(MessageType.RequestChannels));
+                Client.WriteMessage(Message.Create(MessageType.GetAllChannelsRequest));
             }
             else
             {

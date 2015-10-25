@@ -16,9 +16,10 @@ namespace Babble.Core
         Hello,
         Chat,
         Voice,
-        RequestChannels,
-        RequestChannelCreate,
-        ChannelCreated,
+        GetAllChannelsRequest,
+        GetAllChannelsResponse,
+        CreateChannelRequest,
+        CreateChannelResponse,
         UserConnected,
         UserDisconnected,
         UserChangeChannelRequest,  // maybe this should be renamed

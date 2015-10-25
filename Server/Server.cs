@@ -70,17 +70,17 @@ namespace Server
                     case MessageType.Hello:
                         HelloReceived(client);
                         break;
-                    case MessageType.RequestChannels:
-                        client.WriteMessage(Message.Create(MessageType.RequestChannels, Channels));
+                    case MessageType.GetAllChannelsRequest:
+                        client.WriteMessage(Message.Create(MessageType.GetAllChannelsResponse, Channels));
                         break;
                     case MessageType.UserChangeChannelRequest:
                         ChangeChannelRequestReceived(client, message);
                         break;
-                    case MessageType.RequestChannelCreate:
+                    case MessageType.CreateChannelRequest:
                         var channel = message.GetData<Channel>();
                         channel.Id = Channels.Select(c => c.Id).Max() + 1;
                         AddChannel(channel);
-                        BroadcastData(client, Message.Create(MessageType.ChannelCreated, channel), true);
+                        BroadcastData(client, Message.Create(MessageType.CreateChannelResponse, channel), true);
                         break;
                 }
             }
@@ -103,7 +103,7 @@ namespace Server
             AddUserToChannel(client.UserInfo, (int)message.Data);
 
             // broadcast refresh channels to all.
-            BroadcastData(client, Message.Create(MessageType.RequestChannels, Channels), true);
+            BroadcastData(client, Message.Create(MessageType.GetAllChannelsResponse, Channels), true);
         }
 
         private void HelloReceived(NetworkClient client)
