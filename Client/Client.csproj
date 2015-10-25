@@ -86,7 +86,6 @@
       <DependentUpon>NewChannelWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\ChannelTreeViewModel.cs" />
-    <Compile Include="Sound.cs" />
     <Compile Include="ViewModels\ChannelViewModel.cs" />
     <Compile Include="ViewModels\UserInfoViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
