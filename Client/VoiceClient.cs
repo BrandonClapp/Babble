@@ -19,6 +19,7 @@ namespace Client
         public UserInfo User = new UserInfo();
         public event Action<string, int> SomeUserConnected;
         public event Action<string, int> SomeUserDisconnected;
+        public event Action<string> SomeUserTalking;
         public event Action<string, int> ChannelCreated;
         public event Action<List<Channel>> RefreshChannels;
         public event Action<bool, string> Connected;
@@ -67,7 +68,7 @@ namespace Client
                 {
                     case MessageType.Voice:
                         var voiceData = message.GetData<VoiceData>();
-                        HandleVoiceMessage(voiceData.GetDataInBytes());
+                        HandleVoiceMessage(voiceData);
                         break;
                     case MessageType.UserConnected:
                         var userInfo = message.GetData<UserInfo>();
@@ -89,9 +90,10 @@ namespace Client
             }
         }
 
-        private void HandleVoiceMessage(byte[] buff)
+        private void HandleVoiceMessage(VoiceData voiceData)
         {
-            SoundEngine.Play(buff);
+            SoundEngine.Play(voiceData.GetDataInBytes());
+            SomeUserTalking(voiceData.Username);
         }
 
         public void SendChatMessage(string chatMessage)
@@ -113,6 +115,8 @@ namespace Client
             var credentialResult = Client.ReadMessage().GetData<UserCredentialResult>();
             if (credentialResult.IsAuthenticated)
             {
+                User = credentialResult.UserInfo;
+
                 ThreadStart ts = new ThreadStart(StartReading);
                 Thread thread = new Thread(ts);
                 thread.IsBackground = true;

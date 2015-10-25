@@ -77,11 +77,25 @@ namespace Client.ViewModels
         public string Username { get { return userInfo.Username; } }
         public int ChannelId { get { return userInfo.ChannelId; } }
 
+        private static readonly TimeSpan TalkingStopDelay = new TimeSpan(0, 0, 0, 0, 300);
         private bool _IsTalking;
         public bool IsTalking
         {
             get { return _IsTalking; }
-            set { _IsTalking = value; OnPropertyChanged(nameof(IsTalking)); }
+            set {
+                _IsTalking = value;
+                OnPropertyChanged(nameof(IsTalking));
+            }
+        }
+
+        public DateTime BeginTalkingTime { get; set; } = DateTime.MinValue;
+
+        public void UpdateTimedBaseProperty()
+        {
+            if (IsTalking && (DateTime.Now - BeginTalkingTime) > TalkingStopDelay)
+            {
+                IsTalking = false;
+            }
         }
     }
 }

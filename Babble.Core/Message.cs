@@ -98,6 +98,7 @@ namespace Babble.Core
     {
         public bool IsAuthenticated { get; set; }
         public string Message { get; set; }
+        public UserInfo UserInfo { get; set; }
     }
 
     public class Channel

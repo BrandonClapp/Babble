@@ -12,11 +12,15 @@ namespace Client.ViewModels
     {
         VoiceClient client = new VoiceClient();
         System.Windows.Threading.Dispatcher dispatcher = System.Windows.Application.Current.Dispatcher;
+        System.Timers.Timer periodicUpdateTimer = new System.Timers.Timer(700); // periodic update GUI property that is timer based
+        // so one of them is the talking status
+        // if the user stopped talking for couple seconds, considered they're done, so update the UI
 
         public VoiceClientViewModel()
         {
             client.SomeUserConnected += SomeUserConnectedHandler;
             client.SomeUserDisconnected += SomeUserDisconnectedHandler;
+            client.SomeUserTalking += SomeUserTalkingHandler;
             client.ChannelCreated += ChannelCreatedHandler;
             client.RefreshChannels += RefreshChannelsHandler;
             client.Connected += ConnectedHandler;
@@ -27,7 +31,23 @@ namespace Client.ViewModels
             JoinChannelCommand = new DelegateCommand(JoinChannelCommandHandler);
             CreateChannelCommand = new DelegateCommand(CreateChannelCommandHandler);
 
+            periodicUpdateTimer.Elapsed += PeriodicUpdateTimer_Elapsed;
+        }
 
+        private void PeriodicUpdateTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (ChannelTreeViewModel == null || ChannelTreeViewModel.Channels == null)
+            {
+                return;
+            }
+
+            var users = from c in ChannelTreeViewModel.Channels
+                        from u in c.Users
+                        select u;
+            foreach (var u in users)
+            {
+                u.UpdateTimedBaseProperty();
+            }
         }
 
         private ChannelTreeViewModel _ChannelTreeViewModel;
@@ -64,11 +84,13 @@ namespace Client.ViewModels
                     AddActivity("Attempting to connect to " + host + ":" + port + ".");
                     client.Connect(host, port, ncw.Username, ncw.Password);
                     IsConnected = true;
+                    periodicUpdateTimer.Start();
                 }
                 catch (Exception ex)
                 {
                     AddActivity(ex.Message);
                     IsConnected = false;
+                    periodicUpdateTimer.Stop();
                 }
             }
         }
@@ -80,6 +102,8 @@ namespace Client.ViewModels
             ChannelTreeViewModel = null;
             AddActivity("Disconnected");
             IsConnected = false;
+            periodicUpdateTimer.Stop();
+
         }
 
         public ICommand JoinChannelCommand { get; private set; }
@@ -157,6 +181,23 @@ namespace Client.ViewModels
                 AddActivity(string.Format("{0} Disconnected", username));
             });
         }
+
+        private void SomeUserTalkingHandler(string username)
+        {
+            var users = from c in ChannelTreeViewModel.Channels
+                       from u in c.Users
+                       where u.Username == username
+                       select u;
+            if (users.Any())
+            {
+                foreach (var user in users)
+                {
+                    user.BeginTalkingTime = DateTime.Now;
+                    user.IsTalking = true;
+                }
+            }
+        }
+
 
         public void AddActivity(string s)
         {

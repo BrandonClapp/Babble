@@ -7,6 +7,9 @@
         <Style TargetType="MenuItem">
             <Setter Property="Height" Value="24"/>
         </Style>
+
+        <!--://stackoverflow.com/questions/7000819/binding-a-button-visibility-to-bool-value-in-viewmodel -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Window.Resources>
     <Grid>
         <Grid.Background>
@@ -60,17 +63,10 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <Image Grid.Column="0" Source="images/talk_inactive.png" Margin="0 0 5 0">
-                                        <Image.Style>
-                                            <Style TargetType="Image">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsTalking}" Value="True">
-                                                        <Setter Property="Source" Value="images/talk_active.png"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Image.Style>
-                                    </Image>
+                                    <Image Grid.Column="0" Source="images/talk_inactive.png" Margin="0 0 5 0"
+                                           Visibility="{Binding !IsTalking, Converter={StaticResource BoolToVis}}"/>
+                                    <Image Grid.Column="0" Source="images/talk_active.png" Margin="0 0 5 0"
+                                           Visibility="{Binding IsTalking, Converter={StaticResource BoolToVis}}"/>
                                     <TextBlock Grid.Column="1" Text="{Binding Username, Mode=OneWay}"/>
                                 </Grid>
                             </DataTemplate>

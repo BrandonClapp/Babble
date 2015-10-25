@@ -100,6 +100,7 @@ namespace Server
             var userInfo = new UserInfo();
             client.UserInfo = userInfo;
             var result = new UserCredentialResult();
+            result.UserInfo = userInfo;
             // Handle credential authorization
             if (string.IsNullOrWhiteSpace(credential.Username))
             {
