@@ -23,6 +23,7 @@ namespace Client.ViewModels
             client.SomeUserTalking += SomeUserTalkingHandler;
             client.SomeUserChangedChannel += SomeUserChangedChannelHandler;
             client.ChannelCreated += ChannelCreatedHandler;
+            client.ChannelRenamed += ChannelRenamedHandler;
             client.RefreshChannels += RefreshChannelsHandler;
             client.Connected += ConnectedHandler;
             client.Disconnected += DisconnectedHandler;
@@ -31,6 +32,7 @@ namespace Client.ViewModels
             DisconnectCommand = new DelegateCommand(DisconnectCommandHandler);
             JoinChannelCommand = new DelegateCommand(JoinChannelCommandHandler);
             CreateChannelCommand = new DelegateCommand(CreateChannelCommandHandler);
+            RenameChannelCommand = new DelegateCommand(RenameChannelCommandHandler);
 
             periodicUpdateTimer.Elapsed += PeriodicUpdateTimer_Elapsed;
         }
@@ -126,6 +128,22 @@ namespace Client.ViewModels
             }
         }
 
+        public ICommand RenameChannelCommand { get; private set; }
+        private void RenameChannelCommandHandler(object state)
+        {
+            var channel = GetSelectedChannel();
+
+            RenameChannelWindow window = new RenameChannelWindow(System.Windows.Application.Current.MainWindow);
+            window.ChannelNameTextBox.Text = channel.Name;
+            if (window.ShowDialog() == true)
+            {
+                var newChannelName = window.ChannelNameTextBox.Text;
+                client.WriteMessage(Message.Create(MessageType.RenameChannelRequest, new Channel() { Id = channel.Id, Name = newChannelName }));
+
+            }
+
+        }
+
         private void ConnectedHandler(bool successful, string message)
         {
             if (successful)
@@ -149,6 +167,16 @@ namespace Client.ViewModels
             {
                 ChannelTreeViewModel.Channels.Add(new ChannelViewModel(channel));
                 AddActivity(string.Format("Channel {0} : {1} created", channel.Id, channel.Name));
+            });
+        }
+
+        private void ChannelRenamedHandler(Channel channel)
+        {
+            dispatcher.Invoke(() =>
+            {
+                var channelVM = FindChannel(channel.Id);
+                channelVM.Name = channel.Name;
+                AddActivity(string.Format("Channel {0} : {1} renamed", channel.Id, channel.Name));
             });
         }
 
@@ -260,6 +288,11 @@ namespace Client.ViewModels
         private ChannelViewModel GetSelectedChannel()
         {
             return ChannelTreeViewModel.Channels.FirstOrDefault(c => c.IsSelected);
+        }
+
+        private ChannelViewModel FindChannel(int id)
+        {
+            return ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == id);
         }
     }
 }

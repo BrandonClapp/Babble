@@ -82,6 +82,9 @@ namespace Server
                         AddChannel(channel);
                         BroadcastData(client, Message.Create(MessageType.CreateChannelResponse, channel), true);
                         break;
+                    case MessageType.RenameChannelRequest:
+                        RenameChannelRequestReceived(client, message);
+                        break;
                 }
             }
 
@@ -103,6 +106,19 @@ namespace Server
             AddUserToChannel(client.UserInfo, (int)message.Data);
 
             BroadcastData(client, Message.Create(MessageType.UserChangeChannelResponse, client.UserInfo), true);
+        }
+
+        private void RenameChannelRequestReceived(NetworkClient client, Message message)
+        {
+            var channelFromRequest = message.GetData<Channel>();
+            var channelFromServer = Channels.FirstOrDefault(c => c.Id == channelFromRequest.Id);
+            if (channelFromServer == null)
+            {
+                Console.WriteLine($"Unable to find channel id {channelFromRequest.Id} in server");
+                return;
+            }
+            channelFromServer.Name = channelFromRequest.Name;
+            BroadcastData(client, Message.Create(MessageType.RenameChannelResponse, channelFromRequest), true);
         }
 
         private void HelloReceived(NetworkClient client)

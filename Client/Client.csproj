@@ -85,6 +85,9 @@
     <Compile Include="NewChannelWindow.xaml.cs">
       <DependentUpon>NewChannelWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="RenameChannelWindow.xaml.cs">
+      <DependentUpon>RenameChannelWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ViewModels\ChannelTreeViewModel.cs" />
     <Compile Include="ViewModels\ChannelViewModel.cs" />
     <Compile Include="ViewModels\UserInfoViewModel.cs" />
@@ -92,6 +95,10 @@
     <Compile Include="ViewModels\VoiceClientViewModel.cs" />
     <Compile Include="VoiceClient.cs" />
     <Page Include="NewChannelWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="RenameChannelWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

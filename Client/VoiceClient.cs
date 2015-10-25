@@ -21,6 +21,7 @@ namespace Client
         public event Action<UserInfo> SomeUserTalking;
         public event Action<UserInfo> SomeUserChangedChannel;
         public event Action<Channel> ChannelCreated;
+        public event Action<Channel> ChannelRenamed;
         public event Action<List<Channel>> RefreshChannels;
         public event Action<bool, string> Connected;
         public event Action Disconnected;
@@ -87,6 +88,9 @@ namespace Client
                     case MessageType.GetAllChannelsResponse:
                         var channels = message.GetData<List<Channel>>();
                         RefreshChannels(channels);
+                        break;
+                    case MessageType.RenameChannelResponse:
+                        ChannelRenamed(message.GetData<Channel>());
                         break;
                     case MessageType.UserChangeChannelResponse:
                         var userThatChangedChannel = message.GetData<UserInfo>();

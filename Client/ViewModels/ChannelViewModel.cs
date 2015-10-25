@@ -20,7 +20,7 @@ namespace Client.ViewModels
         }
 
         public int Id { get { return channel.Id; } }
-        public string Name { get { return channel.Name; } }
+        public string Name { get { return channel.Name; } set { channel.Name = value; OnPropertyChanged(nameof(Name)); } }
 
         public ObservableCollection<UserInfoViewModel> Users { get; private set; }
 
