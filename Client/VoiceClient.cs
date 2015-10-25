@@ -117,11 +117,11 @@ namespace Client
             }
 
             Client = NetworkClient.Connect(host, port);
-            Client.WriteMessage(Message.Create(MessageType.Credential, new UserCredential() { Username = username, Password = password }));
-            var credentialResult = Client.ReadMessage().GetData<UserCredentialResult>();
-            if (credentialResult.IsAuthenticated)
+            Client.WriteMessage(Message.Create(MessageType.CredentialRequest, new UserCredential() { Username = username, Password = password }));
+            var response = Client.ReadMessage().GetData<UserCredentialResponse>();
+            if (response.IsAuthenticated)
             {
-                UserInfo = credentialResult.UserInfo;
+                UserInfo = response.UserInfo;
 
                 Task.Factory.StartNew(() =>
                 {
@@ -129,12 +129,12 @@ namespace Client
                 }, TaskCreationOptions.LongRunning);
 
                 SoundEngine.Record();
-                Connected(true, credentialResult.Message);
+                Connected(true, response.Message);
                 Client.WriteMessage(Message.Create(MessageType.RequestChannels));
             }
             else
             {
-                Connected(false, credentialResult.Message);
+                Connected(false, response.Message);
                 Client.Disconnect();
             }
         }

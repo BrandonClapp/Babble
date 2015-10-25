@@ -26,7 +26,11 @@ namespace Server
             {
                 var client = new NetworkClient(listener.AcceptTcpClient());
                 ClientList.Add(client);
-                HandleConnectedClient(client);
+
+                Task.Factory.StartNew(() =>
+                {
+                    HandleConnectedClient(client);
+                },TaskCreationOptions.LongRunning);
 
                 Console.WriteLine("User Connected. Now you have {0} users connected", ClientList.Count);
             }
@@ -43,55 +47,52 @@ namespace Server
 
         private void HandleConnectedClient(NetworkClient client)
         {
-            Task.Factory.StartNew(() =>
+            while (true)
             {
-                while (true)
+                var message = client.ReadMessage();
+                if (message == null)
                 {
-                    var message = client.ReadMessage();
-                    if (message == null)
-                    {
-                        break;
-                    }
-
-                    switch (message.Type)
-                    {
-                        // todo: refactor
-                        case MessageType.Chat:
-                            BroadcastData(client, message, true);
-                            break;
-                        case MessageType.Voice:
-                            BroadcastData(client, message, true);
-                            break;
-                        case MessageType.Credential:
-                            CredentialDataReceived(client, message);
-                            break;
-                        case MessageType.Hello:
-                            HelloReceived(client);
-                            break;
-                        case MessageType.RequestChannels:
-                            client.WriteMessage(Message.Create(MessageType.RequestChannels, Channels));
-                            break;
-                        case MessageType.UserChangeChannelRequest:
-                            ChangeChannelRequestReceived(client, message);
-                            break;
-                        case MessageType.RequestChannelCreate:
-                            var channel = message.GetData<Channel>();
-                            channel.Id = Channels.Select(c => c.Id).Max() + 1;
-                            AddChannel(channel);
-                            BroadcastData(client, Message.Create(MessageType.ChannelCreated, channel), true);
-                            break;
-                    }
+                    break;
                 }
 
-                // If the handler no longer running, do some clean up here
-                BroadcastData(client, Message.Create(MessageType.UserDisconnected, client.UserInfo));
-                client.Disconnect();
-                ClientList.Remove(client);
+                switch (message.Type)
+                {
+                    // todo: refactor
+                    case MessageType.Chat:
+                        BroadcastData(client, message, true);
+                        break;
+                    case MessageType.Voice:
+                        BroadcastData(client, message, true);
+                        break;
+                    case MessageType.CredentialRequest:
+                        CredentialDataReceived(client, message);
+                        break;
+                    case MessageType.Hello:
+                        HelloReceived(client);
+                        break;
+                    case MessageType.RequestChannels:
+                        client.WriteMessage(Message.Create(MessageType.RequestChannels, Channels));
+                        break;
+                    case MessageType.UserChangeChannelRequest:
+                        ChangeChannelRequestReceived(client, message);
+                        break;
+                    case MessageType.RequestChannelCreate:
+                        var channel = message.GetData<Channel>();
+                        channel.Id = Channels.Select(c => c.Id).Max() + 1;
+                        AddChannel(channel);
+                        BroadcastData(client, Message.Create(MessageType.ChannelCreated, channel), true);
+                        break;
+                }
+            }
 
-                // refactor this
-                RemoveUserFromChannel(client.UserInfo);
-                Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.UserInfo.Username, ClientList.Count);
-            }, TaskCreationOptions.LongRunning);
+            // If the handler no longer running, do some clean up here
+            BroadcastData(client, Message.Create(MessageType.UserDisconnected, client.UserInfo));
+            client.Disconnect();
+            ClientList.Remove(client);
+
+            // refactor this
+            RemoveUserFromChannel(client.UserInfo);
+            Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.UserInfo.Username, ClientList.Count);
         }
 
         private void ChangeChannelRequestReceived(NetworkClient client, Message message)
@@ -115,15 +116,15 @@ namespace Server
             var credential = message.GetData<UserCredential>();
             var userInfo = new UserInfo();
             client.UserInfo = userInfo;
-            var result = new UserCredentialResult();
-            result.UserInfo = userInfo;
+            var response = new UserCredentialResponse();
+            response.UserInfo = userInfo;
             // Handle credential authorization
             if (string.IsNullOrWhiteSpace(credential.Username))
             {
                 userInfo.Id = Guid.NewGuid();
                 userInfo.Username = "Anon#" + new Random().Next(5000);
-                result.IsAuthenticated = true;
-                result.Message = "Great success!";
+                response.IsAuthenticated = true;
+                response.Message = "Great success!";
 
                 AddUserToChannel(userInfo, 0);
                 BroadcastData(client, Message.Create(MessageType.UserConnected, userInfo));
@@ -132,11 +133,11 @@ namespace Server
             {
                 // TODO: handle actual username and password
 
-                result.IsAuthenticated = false;
-                result.Message = "Brandon fix this!";
+                response.IsAuthenticated = false;
+                response.Message = "Brandon fix this!";
             }
 
-            client.WriteMessage(Message.Create(MessageType.CredentialResult, result));
+            client.WriteMessage(Message.Create(MessageType.CredentialResponse, response));
         }
 
         private void AddChannel(Channel channel)

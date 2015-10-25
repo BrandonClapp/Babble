@@ -11,8 +11,8 @@ namespace Babble.Core
     public enum MessageType
     {
         None,
-        Credential,
-        CredentialResult,
+        CredentialRequest,
+        CredentialResponse,
         Hello,
         Chat,
         Voice,
@@ -97,7 +97,7 @@ namespace Babble.Core
         public string Password { get; set; }
     }
 
-    public class UserCredentialResult
+    public class UserCredentialResponse
     {
         public bool IsAuthenticated { get; set; }
         public string Message { get; set; }
