@@ -65,9 +65,11 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Image Grid.Column="0" Source="images/talk_inactive.png" Margin="0 0 5 0"
-                                           Visibility="{Binding !IsTalking, Converter={StaticResource BoolToVis}}"/>
+                                           Visibility="{Binding !IsTalking, Converter={StaticResource BoolToVis}}"
+                                           Width="10" Height="10"/>
                                     <Image Grid.Column="0" Source="images/talk_active.png" Margin="0 0 5 0"
-                                           Visibility="{Binding IsTalking, Converter={StaticResource BoolToVis}}"/>
+                                           Visibility="{Binding IsTalking, Converter={StaticResource BoolToVis}}"
+                                           Width="10" Height="10"/>
                                     <TextBlock Grid.Column="1" Text="{Binding Username, Mode=OneWay}"/>
                                 </Grid>
                             </DataTemplate>
