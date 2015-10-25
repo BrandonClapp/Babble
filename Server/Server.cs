@@ -71,15 +71,31 @@ namespace Server
                         case MessageType.RequestChannels:
                             client.WriteMessage(Message.Create(MessageType.RequestChannels, Channels));
                             break;
+                        case MessageType.UserChangeChannelRequest:
+                            ChangeChannelRequestReceived(client, message);
+                            break;
                     }
                 }
 
                 // If the handler no longer running, do some clean up here
                 client.Disconnect();
                 ClientList.Remove(client);
+
+                // refactor this
                 RemoveUserFromChannel(client.UserInfo);
                 Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.UserInfo.Username, ClientList.Count);
             }, TaskCreationOptions.LongRunning);
+        }
+
+        private void ChangeChannelRequestReceived(NetworkClient client, Message message)
+        {
+            RemoveUserFromChannel(client.UserInfo);
+
+            // todo: validation that the user can join target channel.
+            AddUserToChannel(client.UserInfo, (int)message.Data);
+
+            // broadcast refresh channels to all.
+            BroadcastData(client, Message.Create(MessageType.RequestChannels, Channels), true);
         }
 
         private void HelloReceived(NetworkClient client)
@@ -96,11 +112,12 @@ namespace Server
             // Handle credential authorization
             if (string.IsNullOrWhiteSpace(credential.Username))
             {
+                userInfo.Id = Guid.NewGuid();
                 userInfo.Username = "Anon#" + new Random().Next(5000);
                 result.IsAuthenticated = true;
                 result.Message = "Great success!";
 
-                AddUserToChannel(userInfo);
+                AddUserToChannel(userInfo, 0);
                 BroadcastData(client, Message.Create(MessageType.UserConnected, userInfo));
             }
             else
@@ -114,25 +131,27 @@ namespace Server
             client.WriteMessage(Message.Create(MessageType.CredentialResult, result));
         }
 
-        private void AddUserToChannel(UserInfo userInfo)
+        private void AddUserToChannel(UserInfo userInfo, int target)
         {
-            var channel = Channels.FirstOrDefault(c => c.Id == userInfo.ChannelId);
+            var channel = Channels.FirstOrDefault(c => c.Id == target);
             if (channel == null)
             {
-                Channels[0].Users.Add(userInfo);
+                // "Default Channel" configurable at a later time.
+                // for now, just the first one.
+                Channels[0].AddUser(userInfo);
             }
             else
             {
-                channel.Users.Add(userInfo);
+                channel.AddUser(userInfo);
+                //channel.Users.Add(userInfo);
             }
         }
 
         private void RemoveUserFromChannel(UserInfo userInfo)
         {
-            foreach (var channel in Channels)
-            {
-                channel.Users.RemoveAll(u => u.Username == userInfo.Username);
-            }
+            var source = Channels.Find(ch => ch.Id == userInfo.ChannelId);
+            var user = source.Users.Find(u => u.Id == userInfo.Id);
+            source.RemoveUser(user);
         }
 
         private void BroadcastData(NetworkClient client, Message message, bool includeSelf = false)

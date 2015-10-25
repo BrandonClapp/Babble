@@ -92,6 +92,7 @@ namespace Client
                     var channelTreeItem = new TreeViewItem();
                     channelTreeItem.IsExpanded = true;
                     channelTreeItem.Header = channel.Id + " : " + channel.Name;
+                    channelTreeItem.Tag = channel.Id;
                     if (channel.Users != null && channel.Users.Any())
                     {
                         foreach (var user in channel.Users)
@@ -101,11 +102,20 @@ namespace Client
                             channelTreeItem.Items.Add(userTreeItem);
                         }
                     }
-                    
+
+                    channelTreeItem.MouseDoubleClick += ChannelTreeItem_MouseDoubleClick;
                     this.UserAreaTree.Items.Add(channelTreeItem);
                 }
                 AddActivity("Ain't nobody dope as me I'm dressed so fresh so clean");
             });
+        }
+
+        private void ChannelTreeItem_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var channel = sender as TreeViewItem;
+            var channelId = channel.Tag;
+            AddActivity("Double clicked channel " + channelId);
+            client.WriteMessage(Message.Create(MessageType.UserChangeChannelRequest, channelId));
         }
 
         private void SomeUserConnectedHandler(string username, int channel)
