@@ -15,7 +15,6 @@ namespace Client
 {
     class VoiceClient
     {
-        public IntPtr Owner { get; set; }
         private NetworkClient Client;
         public UserInfo User = new UserInfo();
         public event Action<string, int> SomeUserConnected;
@@ -29,11 +28,7 @@ namespace Client
         public void Transmit()
         {
             SoundEngine.Init();
-            //Sound.Record(Owner, b =>
-            //{
-            //    if (GetAsyncKeyState(0x11) == 0 || NetworkClient.IsDisconnected) return;
-            //    WriteMessage(Message.CreateVoiceMessage(Convert.ToBase64String(b)));
-            //});
+
             SoundEngine.Record((b) =>
             {
                 if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
@@ -92,7 +87,6 @@ namespace Client
 
         private void HandleVoiceMessage(byte[] buff)
         {
-            //Sound.Play(Owner, buff);
             SoundEngine.Play(buff);
         }
 
