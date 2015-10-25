@@ -16,7 +16,7 @@ namespace Client
     class VoiceClient
     {
         private NetworkClient Client;
-        public UserInfo User = new UserInfo();
+        public UserInfo UserInfo = new UserInfo();
         public event Action<string, int> SomeUserConnected;
         public event Action<string, int> SomeUserDisconnected;
         public event Action<string> SomeUserTalking;
@@ -34,7 +34,7 @@ namespace Client
             {
                 if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
                 var voiceData = new VoiceData();
-                voiceData.Username = User.Username;
+                voiceData.Username = UserInfo.Username;
                 voiceData.SetDataFromBytes(b);
                 WriteMessage(Message.Create(MessageType.Voice, voiceData));
             });
@@ -120,7 +120,7 @@ namespace Client
             var credentialResult = Client.ReadMessage().GetData<UserCredentialResult>();
             if (credentialResult.IsAuthenticated)
             {
-                User = credentialResult.UserInfo;
+                UserInfo = credentialResult.UserInfo;
 
                 ThreadStart ts = new ThreadStart(StartReading);
                 Thread thread = new Thread(ts);
@@ -147,7 +147,7 @@ namespace Client
 
             if (!Client.IsDisconnected)
             {
-                Client.WriteMessage(Message.Create(MessageType.UserDisconnected, User));
+                Client.WriteMessage(Message.Create(MessageType.UserDisconnected, UserInfo));
             }
 
 

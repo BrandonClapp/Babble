@@ -29,7 +29,6 @@
                 <MenuItem Header="Disconnect" Command="{Binding DisconnectCommand}"/>
             </MenuItem>
             <MenuItem Header="Channels" IsEnabled="{Binding IsConnected}">
-                <MenuItem Header="Join - comming soon!" Command="{Binding JoinChannelCommand}"/>
                 <MenuItem Header="Create" Command="{Binding CreateChannelCommand}"/>
             </MenuItem>
         </Menu>
@@ -42,16 +41,18 @@
             <TreeView Name="UserAreaTree" 
                       Background="Transparent" 
                       DataContext="{Binding ChannelTreeViewModel}"
-                      ItemsSource="{Binding Channels}">
+                      ItemsSource="{Binding Channels}"
+                      >
                 <TreeView.Resources>
                     <!-- default tree view item to expand -->
                     <Style TargetType="TreeViewItem">
                         <Setter Property="IsExpanded" Value="True"/>
+                        <EventSetter Event="TreeViewItem.PreviewMouseRightButtonDown" Handler="TreeViewItem_PreviewMouseRightButtonDown"/>
                     </Style>
                 </TreeView.Resources>
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Users}">
-                        <TextBlock>
+                        <TextBlock MouseLeftButtonDown="JoinChannel_MouseDoubleClick">
                             <Run Text="{Binding Id, Mode=OneWay}"></Run>
                             <Run Text=" : "></Run>
                             <Run Text="{Binding Name, Mode=OneWay}"></Run>

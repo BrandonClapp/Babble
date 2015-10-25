@@ -41,14 +41,15 @@ namespace Client.ViewModels
                 return;
             }
 
-            var users = from c in ChannelTreeViewModel.Channels
-                        from u in c.Users
-                        select u;
+            var users = GetAllUsers();
+            
             foreach (var u in users)
             {
                 u.UpdateTimedBaseProperty();
             }
         }
+
+        public UserInfo UserInfo { get { return client.UserInfo; } }
 
         private ChannelTreeViewModel _ChannelTreeViewModel;
         public ChannelTreeViewModel ChannelTreeViewModel
@@ -109,6 +110,18 @@ namespace Client.ViewModels
         public ICommand JoinChannelCommand { get; private set; }
         private void JoinChannelCommandHandler(object state)
         {
+            var channel = state as ChannelViewModel;
+
+            var user = FindUser(UserInfo.Username);
+            if (user == null)
+            {
+                AddActivity("Unable to find the logged in user to join to channel");
+                return;
+            }
+
+            RemoveUserFromChannels(user);
+            channel.Users.Add(user);
+            client.WriteMessage(Message.Create(MessageType.UserChangeChannelRequest, channel.Id));
         }
 
         public ICommand CreateChannelCommand { get; private set; }
@@ -184,24 +197,46 @@ namespace Client.ViewModels
 
         private void SomeUserTalkingHandler(string username)
         {
-            var users = from c in ChannelTreeViewModel.Channels
-                       from u in c.Users
-                       where u.Username == username
-                       select u;
-            if (users.Any())
+            var user = FindUser(username);
+            if (user == null)
             {
-                foreach (var user in users)
-                {
-                    user.BeginTalkingTime = DateTime.Now;
-                    user.IsTalking = true;
-                }
+                return;
             }
+
+            user.BeginTalkingTime = DateTime.Now;
+            user.IsTalking = true;
         }
 
 
         public void AddActivity(string s)
         {
             Activity += Environment.NewLine + s;
+        }
+
+        private UserInfoViewModel FindUser(string username)
+        {
+            var users = from c in ChannelTreeViewModel.Channels
+                        from u in c.Users
+                        where u.Username == username
+                        select u;
+
+            return users.FirstOrDefault();
+        }
+
+        private List<UserInfoViewModel> GetAllUsers()
+        {
+            var users = from c in ChannelTreeViewModel.Channels
+                        from u in c.Users
+                        select u;
+            return users.ToList();
+        }
+
+        private void RemoveUserFromChannels(UserInfoViewModel user)
+        {
+            foreach (var channel in ChannelTreeViewModel.Channels)
+            {
+                channel.Users.Remove(user);
+            }
         }
     }
 }

@@ -9,16 +9,19 @@ using System.Windows.Interop;
 using Babble.Core;
 using System.Linq;
 using Client.ViewModels;
+using System.Windows.Input;
 
 namespace Client
 {
     public partial class VoiceClientGUI : Window
     {
+        VoiceClientViewModel vm = new VoiceClientViewModel();
+
         public VoiceClientGUI()
         {
             InitializeComponent();
 
-            this.DataContext = new VoiceClientViewModel();
+            this.DataContext = vm;
         }
 
         private void ActivityTextBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -29,6 +32,27 @@ namespace Client
             // use the workaround
             ActivityTextBox.CaretIndex = ActivityTextBox.Text.Length;
             ActivityTextBox.ScrollToEnd();
+        }
+
+        //http://stackoverflow.com/questions/592373/select-treeview-node-on-right-click-before-displaying-contextmenu
+        // for right click select tree item
+        private void TreeViewItem_PreviewMouseRightButtonDown(object sender, MouseEventArgs e)
+        {
+            TreeViewItem item = sender as TreeViewItem;
+            if (item != null)
+            {
+                item.Focus();
+                e.Handled = true;
+            }
+        }
+
+        private void JoinChannel_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2)
+            {
+                var channel = UserAreaTree.SelectedItem;
+                vm.JoinChannelCommand.Execute(channel);
+            }
         }
     }
 }

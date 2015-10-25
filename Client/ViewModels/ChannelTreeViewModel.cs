@@ -40,6 +40,13 @@ namespace Client.ViewModels
         }
 
         public ObservableCollection<ChannelViewModel> Channels { get; private set; }
+
+        private ChannelViewModel _SelectedChannel;
+        public ChannelViewModel SelectedChannel
+        {
+            get { return _SelectedChannel; }
+            set { _SelectedChannel = value;OnPropertyChanged(nameof(SelectedChannel)); }
+        }
     }
 
     class ChannelViewModel : ViewModelBase
