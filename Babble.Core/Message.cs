@@ -20,7 +20,9 @@ namespace Babble.Core
         RequestChannelCreate,
         ChannelCreated,
         UserConnected,
-        UserDisconnected
+        UserDisconnected,
+        UserChangeChannelRequest,  // maybe this should be renamed
+        UserChangeChannelResponse
     }
 
     public class Message
@@ -83,6 +85,7 @@ namespace Babble.Core
 
     public class UserInfo
     {
+        public Guid Id { get; set; }
         public string Username { get; set; }
         public bool Authenticated { get; set; }
         public int ChannelId { get; set; }
@@ -105,7 +108,20 @@ namespace Babble.Core
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public List<UserInfo> Users { get; set; } = new List<UserInfo>();
+        public List<UserInfo> Users { get; private set; } = new List<UserInfo>();
+
+        public void AddUser(UserInfo user)
+        {
+            // validation logic for adding user here
+            Users.Add(user);
+            user.ChannelId = Id;
+        }
+
+        public void RemoveUser(UserInfo user)
+        {
+            Users.Remove(user);
+            user.ChannelId = -1;
+        }
     }
 
     public class VoiceData

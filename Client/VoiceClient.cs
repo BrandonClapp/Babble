@@ -86,6 +86,11 @@ namespace Client
                         var channels = message.GetData<List<Channel>>();
                         RefreshChannels(channels);
                         break;
+                    case MessageType.UserChangeChannelResponse:
+                        // youarehere
+                        var targetChannel = message.GetData<Channel>();
+                        //RefreshChannels(channel);
+                        break;
                 }
             }
         }
