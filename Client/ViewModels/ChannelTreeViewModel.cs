@@ -81,6 +81,7 @@ namespace Client.ViewModels
             this.userInfo = userInfo;
         }
 
+        public Guid Id { get { return userInfo.Id; } }
         public string Username { get { return userInfo.Username; } }
         public int ChannelId { get { return userInfo.ChannelId; } }
 

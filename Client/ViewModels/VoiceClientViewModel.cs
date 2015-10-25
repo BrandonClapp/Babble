@@ -112,7 +112,7 @@ namespace Client.ViewModels
         {
             var channel = state as ChannelViewModel;
 
-            var user = FindUser(UserInfo.Username);
+            var user = FindUser(UserInfo.Id);
             if (user == null)
             {
                 AddActivity("Unable to find the logged in user to join to channel");
@@ -152,12 +152,12 @@ namespace Client.ViewModels
             DisconnectCommandHandler(null);
         }
 
-        private void ChannelCreatedHandler(string name, int id)
+        private void ChannelCreatedHandler(Channel channel)
         {
             dispatcher.Invoke(() =>
             {
-                ChannelTreeViewModel.Channels.Add(new ChannelViewModel(new Channel() { Name = name, Id = id }));
-                AddActivity("Channel " + id + " created");
+                ChannelTreeViewModel.Channels.Add(new ChannelViewModel(channel));
+                AddActivity(string.Format("Channel {0} : {1} created", channel.Id, channel.Name));
             });
         }
 
@@ -170,34 +170,34 @@ namespace Client.ViewModels
             });
         }
 
-        private void SomeUserConnectedHandler(string username, int channelId)
+        private void SomeUserConnectedHandler(UserInfo userInfo)
         {
             dispatcher.Invoke(() =>
             {
-                var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == channelId);
+                var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userInfo.ChannelId);
                 if (channel != null)
                 {
-                    channel.Users.Add(new UserInfoViewModel(new UserInfo() { Username = username, ChannelId = channelId }));
+                    channel.Users.Add(new UserInfoViewModel(userInfo));
                 }
-                AddActivity(string.Format("{0} Connected", username));
+                AddActivity(string.Format("{0} Connected", userInfo.Username));
             });
         }
 
-        private void SomeUserDisconnectedHandler(string username, int channelId)
+        private void SomeUserDisconnectedHandler(UserInfo userInfo)
         {
             dispatcher.Invoke(() =>
             {
                 foreach (var channel in ChannelTreeViewModel.Channels)
                 {
-                    channel.Users.Remove(channel.Users.FirstOrDefault(u => u.Username == username));
+                    channel.Users.Remove(channel.Users.FirstOrDefault(u => u.Id == userInfo.Id));
                 }
-                AddActivity(string.Format("{0} Disconnected", username));
+                AddActivity(string.Format("{0} Disconnected", userInfo.Username));
             });
         }
 
-        private void SomeUserTalkingHandler(string username)
+        private void SomeUserTalkingHandler(UserInfo userInfo)
         {
-            var user = FindUser(username);
+            var user = FindUser(userInfo.Id);
             if (user == null)
             {
                 return;
@@ -213,11 +213,11 @@ namespace Client.ViewModels
             Activity += Environment.NewLine + s;
         }
 
-        private UserInfoViewModel FindUser(string username)
+        private UserInfoViewModel FindUser(Guid id)
         {
             var users = from c in ChannelTreeViewModel.Channels
                         from u in c.Users
-                        where u.Username == username
+                        where u.Id == id
                         select u;
 
             return users.FirstOrDefault();

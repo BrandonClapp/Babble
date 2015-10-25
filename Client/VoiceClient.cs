@@ -17,10 +17,10 @@ namespace Client
     {
         private NetworkClient Client;
         public UserInfo UserInfo = new UserInfo();
-        public event Action<string, int> SomeUserConnected;
-        public event Action<string, int> SomeUserDisconnected;
-        public event Action<string> SomeUserTalking;
-        public event Action<string, int> ChannelCreated;
+        public event Action<UserInfo> SomeUserConnected;
+        public event Action<UserInfo> SomeUserDisconnected;
+        public event Action<UserInfo> SomeUserTalking;
+        public event Action<Channel> ChannelCreated;
         public event Action<List<Channel>> RefreshChannels;
         public event Action<bool, string> Connected;
         public event Action Disconnected;
@@ -34,7 +34,7 @@ namespace Client
             {
                 if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
                 var voiceData = new VoiceData();
-                voiceData.Username = UserInfo.Username;
+                voiceData.UserInfo = UserInfo;
                 voiceData.SetDataFromBytes(b);
                 WriteMessage(Message.Create(MessageType.Voice, voiceData));
             });
@@ -72,15 +72,15 @@ namespace Client
                         break;
                     case MessageType.UserConnected:
                         var userInfo = message.GetData<UserInfo>();
-                        SomeUserConnected(userInfo.Username, userInfo.ChannelId);
+                        SomeUserConnected(userInfo);
                         break;
                     case MessageType.UserDisconnected:
                         var userInfo2 = message.GetData<UserInfo>();
-                        SomeUserDisconnected(userInfo2.Username, userInfo2.ChannelId);
+                        SomeUserDisconnected(userInfo2);
                         break;
                     case MessageType.ChannelCreated:
                         var channel = message.GetData<Channel>();
-                        ChannelCreated(channel.Name, channel.Id);
+                        ChannelCreated(channel);
                         break;
                     case MessageType.RequestChannels:
                         var channels = message.GetData<List<Channel>>();
@@ -98,7 +98,7 @@ namespace Client
         private void HandleVoiceMessage(VoiceData voiceData)
         {
             SoundEngine.Play(voiceData.GetDataInBytes());
-            SomeUserTalking(voiceData.Username);
+            SomeUserTalking(voiceData.UserInfo);
         }
 
         public void SendChatMessage(string chatMessage)

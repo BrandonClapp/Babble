@@ -26,7 +26,7 @@ namespace Client
 
         private void ActivityTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            http://stackoverflow.com/questions/1895204/textbox-scrolltoend-doesnt-work-when-the-textbox-is-in-a-non-active-tab
+            //http://stackoverflow.com/questions/1895204/textbox-scrolltoend-doesnt-work-when-the-textbox-is-in-a-non-active-tab
             // microsoft scrolling issue that when you focus on the textbox, scroll up,
             // it's no longer scroll to end even when u call the function
             // use the workaround
