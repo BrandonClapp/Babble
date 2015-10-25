@@ -134,6 +134,9 @@ namespace Client
                 Task.Factory.StartNew(() =>
                 {
                     StartReading();
+
+                    // handle disconnecting client if client is in bad state
+                    Disconnect();
                 }, TaskCreationOptions.LongRunning);
 
                 SoundEngine.Record();
