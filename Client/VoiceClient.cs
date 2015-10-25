@@ -7,8 +7,6 @@ using System.Net;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.Windows;
-using FragLabs.Audio.Codecs;
-using System.Windows.Threading;
 using Babble.Core;
 
 namespace Client
