@@ -17,6 +17,7 @@ namespace Babble.Core
         Chat,
         Voice,
         RequestChannels,
+        RequestChannelCreate,
         ChannelCreated,
         UserConnected,
         UserDisconnected

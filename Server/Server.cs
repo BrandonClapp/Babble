@@ -71,11 +71,11 @@ namespace Server
                         case MessageType.RequestChannels:
                             client.WriteMessage(Message.Create(MessageType.RequestChannels, Channels));
                             break;
-                        case MessageType.ChannelCreated:
+                        case MessageType.RequestChannelCreate:
                             var channel = message.GetData<Channel>();
                             channel.Id = Channels.Select(c => c.Id).Max() + 1;
                             AddChannel(channel);
-                            client.WriteMessage(Message.Create(MessageType.ChannelCreated, channel));
+                            BroadcastData(client, Message.Create(MessageType.ChannelCreated, channel), true);
                             break;
                     }
                 }

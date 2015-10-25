@@ -94,7 +94,7 @@ namespace Client.ViewModels
             if (window.ShowDialog() == true)
             {
                 var channelName = window.ChannelNameTextBox.Text;
-                client.WriteMessage(Message.Create(MessageType.ChannelCreated, new Channel() { Name = channelName }));
+                client.WriteMessage(Message.Create(MessageType.RequestChannelCreate, new Channel() { Name = channelName }));
             }
         }
 
