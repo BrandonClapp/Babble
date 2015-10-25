@@ -28,6 +28,13 @@ namespace Client.ViewModels
             }
         }
 
+        private bool _IsSelected;
+        public bool IsSelected
+        {
+            get { return _IsSelected; }
+            set { _IsSelected = value; OnPropertyChanged(nameof(IsSelected)); }
+        }
+
         public DateTime BeginTalkingTime { get; set; } = DateTime.MinValue;
 
         public void UpdateTimedBaseProperty()

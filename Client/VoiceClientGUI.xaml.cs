@@ -37,18 +37,6 @@ namespace Client
             ActivityTextBox.ScrollToEnd();
         }
 
-        //http://stackoverflow.com/questions/592373/select-treeview-node-on-right-click-before-displaying-contextmenu
-        // for right click select tree item
-        private void TreeViewItem_PreviewMouseRightButtonDown(object sender, MouseEventArgs e)
-        {
-            TreeViewItem item = sender as TreeViewItem;
-            if (item != null)
-            {
-                item.Focus();
-                e.Handled = true;
-            }
-        }
-
         private void JoinChannel_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 2)

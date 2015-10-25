@@ -24,5 +24,11 @@ namespace Client.ViewModels
 
         public ObservableCollection<UserInfoViewModel> Users { get; private set; }
 
+        private bool _IsSelected;
+        public bool IsSelected
+        {
+            get { return _IsSelected; }
+            set { _IsSelected = value;OnPropertyChanged(nameof(IsSelected)); }
+        }
     }
 }
