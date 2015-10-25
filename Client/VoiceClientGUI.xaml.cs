@@ -55,6 +55,7 @@ namespace Client
             {
                 var channel = UserAreaTree.SelectedItem;
                 vm.JoinChannelCommand.Execute(channel);
+                e.Handled = true;
             }
         }
     }
