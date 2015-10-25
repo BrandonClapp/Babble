@@ -11,6 +11,7 @@ namespace Server
 {
     class Server
     {
+        private const int LobbyChannelId = 0;
         private readonly int Port = 8888;
         private readonly IPAddress IPAddress = IPAddress.Any;
         private readonly List<NetworkClient> ClientList = new List<NetworkClient>();
@@ -40,14 +41,14 @@ namespace Server
         private void InitDefaultChannels()
         {
             Channels.Clear();
-            Channels.Add(new Channel { Name = "Default Channel", Id = 0 });
+            Channels.Add(new Channel { Name = "Lobby Channel", Id = LobbyChannelId });
             Channels.Add(new Channel { Name = "Another Channel", Id = 1 });
             Channels.Add(new Channel { Name = "Again Channel", Id = 2 });
         }
 
         private void HandleConnectedClient(NetworkClient client)
         {
-            while (true)
+            while (!client.IsDisconnected)
             {
                 var message = client.ReadMessage();
                 if (message == null)
@@ -85,6 +86,9 @@ namespace Server
                     case MessageType.RenameChannelRequest:
                         RenameChannelRequestReceived(client, message);
                         break;
+                    case MessageType.DeleteChannelRequest:
+                        DeleteChannelRequestReceived(client, message);
+                        break;
                 }
             }
 
@@ -119,6 +123,32 @@ namespace Server
             }
             channelFromServer.Name = channelFromRequest.Name;
             BroadcastData(client, Message.Create(MessageType.RenameChannelResponse, channelFromRequest), true);
+        }
+
+        private void DeleteChannelRequestReceived(NetworkClient client, Message message)
+        {
+            var channelFromRequest = message.GetData<Channel>();
+
+            if (channelFromRequest.Id == LobbyChannelId)
+            {
+                Console.WriteLine("Cannot delete designated lobby channel id " + LobbyChannelId);
+                return;
+            }
+
+            var channelFromServer = Channels.FirstOrDefault(c => c.Id == channelFromRequest.Id);
+            if (channelFromServer == null)
+            {
+                Console.WriteLine($"Unable to find channel id {channelFromRequest.Id} in server");
+                return;
+            }
+
+            foreach (var user in channelFromServer.Users)
+            {
+                AddUserToChannel(user, 0); 
+            }
+            Channels.Remove(channelFromServer);
+
+            BroadcastData(client, Message.Create(MessageType.GetAllChannelsResponse, Channels), true);
         }
 
         private void HelloReceived(NetworkClient client)

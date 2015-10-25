@@ -22,6 +22,8 @@ namespace Babble.Core
         CreateChannelResponse,
         RenameChannelRequest,
         RenameChannelResponse,
+        DeleteChannelRequest,
+        DeleteChannelResponse,
         UserConnected,
         UserDisconnected,
         UserChangeChannelRequest,  // maybe this should be renamed

@@ -70,7 +70,7 @@
                                 <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag.DataContext, RelativeSource={RelativeSource Self}}">
                                     <MenuItem Header="Join" Command="{Binding JoinChannelCommand}"/>
                                     <MenuItem Header="Rename" Command="{Binding RenameChannelCommand}"/>
-                                    <MenuItem Header="Whack"/>
+                                    <MenuItem Header="Delete" Command="{Binding DeleteChannelCommand}"/>
                                 </ContextMenu>
                             </Grid.ContextMenu>
                         </Grid>

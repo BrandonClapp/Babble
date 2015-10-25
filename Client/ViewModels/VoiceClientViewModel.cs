@@ -24,6 +24,7 @@ namespace Client.ViewModels
             client.SomeUserChangedChannel += SomeUserChangedChannelHandler;
             client.ChannelCreated += ChannelCreatedHandler;
             client.ChannelRenamed += ChannelRenamedHandler;
+            client.ChannelDeleted += ChannelDeletedHandler;
             client.RefreshChannels += RefreshChannelsHandler;
             client.Connected += ConnectedHandler;
             client.Disconnected += DisconnectedHandler;
@@ -33,6 +34,7 @@ namespace Client.ViewModels
             JoinChannelCommand = new DelegateCommand(JoinChannelCommandHandler);
             CreateChannelCommand = new DelegateCommand(CreateChannelCommandHandler);
             RenameChannelCommand = new DelegateCommand(RenameChannelCommandHandler);
+            DeleteChannelCommand = new DelegateCommand(DeleteChannelCommandHandler);
 
             periodicUpdateTimer.Elapsed += PeriodicUpdateTimer_Elapsed;
         }
@@ -141,7 +143,22 @@ namespace Client.ViewModels
                 client.WriteMessage(Message.Create(MessageType.RenameChannelRequest, new Channel() { Id = channel.Id, Name = newChannelName }));
 
             }
+        }
 
+        public ICommand DeleteChannelCommand { get; private set; }
+        private void DeleteChannelCommandHandler(object state)
+        {
+            var confirmResult = System.Windows.MessageBox.Show(
+                "Are you really really sure??",
+                "Confirm",
+                System.Windows.MessageBoxButton.YesNoCancel,
+                System.Windows.MessageBoxImage.Warning);
+            if (confirmResult != System.Windows.MessageBoxResult.Yes)
+            {
+                return;
+            }
+            var channel = GetSelectedChannel();
+            client.WriteMessage(Message.Create(MessageType.DeleteChannelRequest, new Channel() { Id = channel.Id }));
         }
 
         private void ConnectedHandler(bool successful, string message)
@@ -166,7 +183,7 @@ namespace Client.ViewModels
             dispatcher.Invoke(() =>
             {
                 ChannelTreeViewModel.Channels.Add(new ChannelViewModel(channel));
-                AddActivity(string.Format("Channel {0} : {1} created", channel.Id, channel.Name));
+                AddActivity($"Channel {channel.Id} : {channel.Name} created");
             });
         }
 
@@ -176,7 +193,17 @@ namespace Client.ViewModels
             {
                 var channelVM = FindChannel(channel.Id);
                 channelVM.Name = channel.Name;
-                AddActivity(string.Format("Channel {0} : {1} renamed", channel.Id, channel.Name));
+                AddActivity($"Channel {channel.Id} : {channel.Name} renamed");
+            });
+        }
+
+        private void ChannelDeletedHandler(Channel channel)
+        {
+            dispatcher.Invoke(() =>
+            {
+                var channelVM = FindChannel(channel.Id);
+                ChannelTreeViewModel.Channels.Remove(channelVM);
+                AddActivity($"Channel {channel.Id} : {channel.Name} deleted");
             });
         }
 
