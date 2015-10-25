@@ -32,7 +32,10 @@ namespace Client
             SoundEngine.Record((b) =>
             {
                 if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
-                WriteMessage(Message.Create(MessageType.Voice, Convert.ToBase64String(b)));
+                var voiceData = new VoiceData();
+                voiceData.Username = User.Username;
+                voiceData.SetDataFromBytes(b);
+                WriteMessage(Message.Create(MessageType.Voice, voiceData));
             });
         }
 
@@ -63,7 +66,8 @@ namespace Client
                 switch (message.Type)
                 {
                     case MessageType.Voice:
-                        HandleVoiceMessage(Convert.FromBase64String(message.Data as string));
+                        var voiceData = message.GetData<VoiceData>();
+                        HandleVoiceMessage(voiceData.GetDataInBytes());
                         break;
                     case MessageType.UserConnected:
                         var userInfo = message.GetData<UserInfo>();

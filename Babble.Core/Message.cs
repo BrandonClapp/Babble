@@ -106,4 +106,18 @@ namespace Babble.Core
         public string Name { get; set; }
         public List<UserInfo> Users { get; set; } = new List<UserInfo>();
     }
+
+    public class VoiceData
+    {
+        public string Username { get; set; }
+        public string Data { get; set; } = string.Empty;
+        public void SetDataFromBytes(byte[] bytes)
+        {
+            Data = Convert.ToBase64String(bytes);
+        }
+        public byte[] GetDataInBytes()
+        {
+            return Convert.FromBase64String(Data);
+        }
+    }
 }
