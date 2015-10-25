@@ -41,8 +41,7 @@
             </Grid.ColumnDefinitions>
             <TreeView Name="UserAreaTree" 
                       Background="Transparent"
-                      DataContext="{Binding ChannelTreeViewModel}"
-                      ItemsSource="{Binding Channels}"
+                      ItemsSource="{Binding ChannelTreeViewModel.Channels}"
                       >
                 <TreeView.Resources>
                     <!-- default tree view item to expand -->
@@ -51,9 +50,16 @@
                         <Setter Property="IsSelected" Value="{Binding IsSelected}"/>
                     </Style>
 
+                    <!--
+                    http://stackoverflow.com/questions/9216777/hierarchical-datatemplate-binding-to-datatype-not-datacontext
+                    wpf sux
+                    have to workaround to do contextmenu command binding to the parent viewmodel
+                    -->
+
                     <!-- CHANNEL TREE NODE TEMPLATE -->
                     <HierarchicalDataTemplate DataType="{x:Type local:ChannelViewModel}" ItemsSource="{Binding Users}">
-                        <Grid MouseRightButtonDown="TreeItem_MouseRightButtonDown">
+                        <Grid MouseRightButtonDown="TreeItem_MouseRightButtonDown"
+                              Tag="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type TreeView}}}">
                             <TextBlock MouseLeftButtonDown="JoinChannel_MouseDoubleClick">
                             <Run Text="{Binding Id, Mode=OneWay}"></Run>
                             <Run Text=" : "></Run>
@@ -61,8 +67,8 @@
                             </TextBlock>
 
                             <Grid.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="Join"/>
+                                <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag.DataContext, RelativeSource={RelativeSource Self}}">
+                                    <MenuItem Header="Join" Command="{Binding JoinChannelCommand}"/>
                                     <MenuItem Header="Rename"/>
                                     <MenuItem Header="Whack"/>
                                 </ContextMenu>
