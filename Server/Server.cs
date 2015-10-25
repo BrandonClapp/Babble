@@ -75,6 +75,7 @@ namespace Server
                 }
 
                 // If the handler no longer running, do some clean up here
+                BroadcastData(client, Message.Create(MessageType.UserDisconnected, client.UserInfo));
                 client.Disconnect();
                 ClientList.Remove(client);
                 RemoveUserFromChannel(client.UserInfo);
