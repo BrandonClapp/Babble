@@ -9,38 +9,9 @@ namespace Babble.Core
     public interface ISoundEngine
     {
         void Init();
-        void Destroy();
-        void Record(Action<byte[]> callback);
+        void SetRecordCallback(Action<byte[]> callback);
+        void Record();
         void Play(byte[] data);
-    }
-
-    public class DummySoundEngine : ISoundEngine
-    {
-        public void Destroy()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Init()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Play(byte[] data)
-        {
-        }
-
-        public void Record(Action<byte[]> callback)
-        {
-            Task.Factory.StartNew(() =>
-            {
-                while (true)
-                {
-                    callback(Encoding.UTF8.GetBytes("I'm walking on sunshine"));
-                    System.Threading.Thread.Sleep(1000);
-                }
-            }, TaskCreationOptions.LongRunning);
-            
-        }
+        void Stop();
     }
 }

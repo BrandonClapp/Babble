@@ -27,8 +27,7 @@ namespace Client
         public void Transmit()
         {
             SoundEngine.Init();
-
-            SoundEngine.Record((b) =>
+            SoundEngine.SetRecordCallback((b) =>
             {
                 if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
                 var voiceData = new VoiceData();
@@ -36,6 +35,7 @@ namespace Client
                 voiceData.SetDataFromBytes(b);
                 WriteMessage(Message.Create(MessageType.Voice, voiceData));
             });
+            SoundEngine.Record();
         }
 
         private object WriteLock = new object();

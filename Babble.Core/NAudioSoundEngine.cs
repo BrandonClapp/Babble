@@ -36,9 +36,10 @@ namespace Babble.Core
             }
         }
 
-        public void Destroy()
+        public void Stop()
         {
-
+            waveIn.StopRecording();
+            waveOut.Stop();
         }
 
         public void Play(byte[] data)
@@ -46,11 +47,15 @@ namespace Babble.Core
             waveOutProvider.AddSamples(data, 0, data.Length);
         }
 
-        public void Record(Action<byte[]> callback)
+        public void Record()
+        {
+            waveIn.StartRecording();
+        }
+
+        public void SetRecordCallback(Action<byte[]> callback)
         {
             try
             {
-                waveIn.StartRecording();
                 Record_Callback = callback;
             }
             catch (Exception ex)
