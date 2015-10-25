@@ -13,6 +13,9 @@ using System.Windows.Input;
 
 namespace Client
 {
+    /// <summary>
+    /// Provides access to UI elements and binding to the VoiceClientViewModel
+    /// </summary>
     public partial class VoiceClientGUI : Window
     {
         VoiceClientViewModel vm = new VoiceClientViewModel();

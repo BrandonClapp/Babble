@@ -87,6 +87,9 @@
     </Compile>
     <Compile Include="ViewModels\ChannelTreeViewModel.cs" />
     <Compile Include="Sound.cs" />
+    <Compile Include="ViewModels\ChannelViewModel.cs" />
+    <Compile Include="ViewModels\UserInfoViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\VoiceClientViewModel.cs" />
     <Compile Include="VoiceClient.cs" />
     <Page Include="NewChannelWindow.xaml">

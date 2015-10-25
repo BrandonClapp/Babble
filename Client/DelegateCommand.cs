@@ -9,6 +9,10 @@ namespace Client
 {
     //http://www.wpftutorial.net/delegatecommand.html
 
+    /// <summary>
+    /// Provide a wrapper around ICommand to make it easier
+    /// to execute binding callbacks.
+    /// </summary>
     public class DelegateCommand : ICommand
     {
         private readonly Predicate<object> _canExecute;
