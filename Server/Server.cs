@@ -60,10 +60,10 @@ namespace Server
                 {
                     // todo: refactor
                     case MessageType.Chat:
-                        BroadcastData(client, message, true);
+                        BroadcastChannel(client, message, true);
                         break;
                     case MessageType.Voice:
-                        BroadcastData(client, message, true);
+                        BroadcastChannel(client, message, true);
                         break;
                     case MessageType.CredentialRequest:
                         CredentialDataReceived(client, message);
@@ -81,7 +81,7 @@ namespace Server
                         var channel = message.GetData<Channel>();
                         channel.Id = Channels.Select(c => c.Id).Max() + 1;
                         AddChannel(channel);
-                        BroadcastData(client, Message.Create(MessageType.CreateChannelResponse, channel), true);
+                        BroadcastAll(client, Message.Create(MessageType.CreateChannelResponse, channel), true);
                         break;
                     case MessageType.RenameChannelRequest:
                         RenameChannelRequestReceived(client, message);
@@ -93,7 +93,7 @@ namespace Server
             }
 
             // If the handler no longer running, do some clean up here
-            BroadcastData(client, Message.Create(MessageType.UserDisconnected, client.UserInfo));
+            BroadcastAll(client, Message.Create(MessageType.UserDisconnected, client.UserInfo));
             client.Disconnect();
             ClientList.Remove(client);
 
@@ -109,7 +109,7 @@ namespace Server
             // todo: validation that the user can join target channel.
             AddUserToChannel(client.UserInfo, (int)message.Data);
 
-            BroadcastData(client, Message.Create(MessageType.UserChangeChannelResponse, client.UserInfo), true);
+            BroadcastAll(client, Message.Create(MessageType.UserChangeChannelResponse, client.UserInfo), true);
         }
 
         private void RenameChannelRequestReceived(NetworkClient client, Message message)
@@ -122,7 +122,7 @@ namespace Server
                 return;
             }
             channelFromServer.Name = channelFromRequest.Name;
-            BroadcastData(client, Message.Create(MessageType.RenameChannelResponse, channelFromRequest), true);
+            BroadcastAll(client, Message.Create(MessageType.RenameChannelResponse, channelFromRequest), true);
         }
 
         private void DeleteChannelRequestReceived(NetworkClient client, Message message)
@@ -148,7 +148,7 @@ namespace Server
             }
             Channels.Remove(channelFromServer);
 
-            BroadcastData(client, Message.Create(MessageType.GetAllChannelsResponse, Channels), true);
+            BroadcastAll(client, Message.Create(MessageType.GetAllChannelsResponse, Channels), true);
         }
 
         private void HelloReceived(NetworkClient client)
@@ -172,7 +172,7 @@ namespace Server
                 response.Message = "Great success!";
 
                 AddUserToChannel(userInfo, 0);
-                BroadcastData(client, Message.Create(MessageType.UserConnected, userInfo));
+                BroadcastAll(client, Message.Create(MessageType.UserConnected, userInfo));
             }
             else
             {
@@ -213,13 +213,38 @@ namespace Server
             source.RemoveUser(user);
         }
 
-        private void BroadcastData(NetworkClient client, Message message, bool includeSelf = false)
+        private void BroadcastAll(NetworkClient sourceClient, Message message, bool includeSelf = false)
         {
-            Parallel.ForEach(ClientList, (c) =>
+            Broadcast(sourceClient, ClientList, message, includeSelf);
+        }
+
+        private void BroadcastChannel(NetworkClient sourceClient, Message message, bool includeSelf = false)
+        {
+            var channelId = sourceClient.UserInfo.ChannelId;
+            var channel = Channels.FirstOrDefault(c => c.Id == channelId);
+            if (channel == null)
+            {
+                Console.WriteLine($"Unable to find channel id {channelId} to broadcast");
+                return;
+            }
+
+            var targetClients = from client in ClientList
+                                     join user in channel.Users on client.UserInfo.Id equals user.Id
+                                     select client;
+            
+            if (targetClients.Any())
+            {
+                Broadcast(sourceClient, targetClients.ToList(), message, includeSelf);
+            }
+        }
+
+        private void Broadcast(NetworkClient sourceClient, List<NetworkClient> targetClients, Message message, bool includeSelf = false)
+        {
+            Parallel.ForEach(targetClients, (c) =>
             {
                 try
                 {
-                    if (!includeSelf && client == c)
+                    if (!includeSelf && sourceClient == c)
                     {
                         return;
                     }
