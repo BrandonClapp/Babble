@@ -89,6 +89,12 @@ namespace Client.ViewModels
         public ICommand SendChatMessageCommand { get; set; }
         private void SendChatMessageCommandHandler(object state)
         {
+            if (string.IsNullOrWhiteSpace(ChatMessage))
+            {
+                ChatMessage = string.Empty;
+                return;
+            }
+
             client.SendChatMessage(ChatMessage);
             ChatMessage = string.Empty;
         }
