@@ -142,4 +142,10 @@ namespace Babble.Core
             return Convert.FromBase64String(Data);
         }
     }
+
+    public class ChatData
+    {
+        public UserInfo UserInfo { get; set; }
+        public string Data { get; set; }
+    }
 }

@@ -19,6 +19,7 @@ namespace Client
         public event Action<UserInfo> SomeUserConnected;
         public event Action<UserInfo> SomeUserDisconnected;
         public event Action<UserInfo> SomeUserTalking;
+        public event Action<ChatData> SomeUserChatting;
         public event Action<UserInfo> SomeUserChangedChannel;
         public event Action<Channel> ChannelCreated;
         public event Action<Channel> ChannelRenamed;
@@ -70,6 +71,9 @@ namespace Client
 
                 switch (message.Type)
                 {
+                    case MessageType.Chat:
+                        HandleChatMessage(message.GetData<ChatData>());
+                        break;
                     case MessageType.Voice:
                         var voiceData = message.GetData<VoiceData>();
                         HandleVoiceMessage(voiceData);
@@ -104,6 +108,11 @@ namespace Client
             }
         }
 
+        private void HandleChatMessage(ChatData chatData)
+        {
+            SomeUserChatting(chatData);
+        }
+
         private void HandleVoiceMessage(VoiceData voiceData)
         {
             SoundEngine.Play(voiceData.GetDataInBytes());
@@ -112,7 +121,7 @@ namespace Client
 
         public void SendChatMessage(string chatMessage)
         {
-            //WriteMessage(new { Type = "Chat", Username = this.User.Username, Message = chatMessage });
+            WriteMessage(Message.Create(MessageType.Chat, new ChatData() { UserInfo = UserInfo, Data = chatMessage }));
         }
 
         public void Connect(string host, int port, string username, string password)

@@ -21,6 +21,7 @@ namespace Client.ViewModels
             client.SomeUserConnected += SomeUserConnectedHandler;
             client.SomeUserDisconnected += SomeUserDisconnectedHandler;
             client.SomeUserTalking += SomeUserTalkingHandler;
+            client.SomeUserChatting += SomeUserChattingHandler;
             client.SomeUserChangedChannel += SomeUserChangedChannelHandler;
             client.ChannelCreated += ChannelCreatedHandler;
             client.ChannelRenamed += ChannelRenamedHandler;
@@ -35,6 +36,7 @@ namespace Client.ViewModels
             CreateChannelCommand = new DelegateCommand(CreateChannelCommandHandler);
             RenameChannelCommand = new DelegateCommand(RenameChannelCommandHandler);
             DeleteChannelCommand = new DelegateCommand(DeleteChannelCommandHandler);
+            SendChatMessageCommand = new DelegateCommand(SendChatMessageCommandHandler);
 
             periodicUpdateTimer.Elapsed += PeriodicUpdateTimer_Elapsed;
         }
@@ -75,6 +77,20 @@ namespace Client.ViewModels
         {
             get { return _IsConnected; }
             set { _IsConnected = value;OnPropertyChanged(nameof(IsConnected)); }
+        }
+
+        private string _ChatMessage;
+        public string ChatMessage
+        {
+            get { return _ChatMessage; }
+            set { _ChatMessage = value; OnPropertyChanged(nameof(ChatMessage)); }
+        }
+
+        public ICommand SendChatMessageCommand { get; set; }
+        private void SendChatMessageCommandHandler(object state)
+        {
+            client.SendChatMessage(ChatMessage);
+            ChatMessage = string.Empty;
         }
 
         public ICommand ConnectCommand { get; private set; }
@@ -252,6 +268,11 @@ namespace Client.ViewModels
 
             user.BeginTalkingTime = DateTime.Now;
             user.IsTalking = true;
+        }
+
+        private void SomeUserChattingHandler(ChatData chatData)
+        {
+            AddActivity("{0}: {1}", chatData.UserInfo.Username, chatData.Data);
         }
 
         private void SomeUserChangedChannelHandler(UserInfo userInfo)
