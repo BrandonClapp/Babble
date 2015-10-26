@@ -19,7 +19,7 @@ namespace Babble.Core
             waveIn = new WaveInEvent();
             waveIn.BufferMilliseconds = 100;
             waveIn.DeviceNumber = -1;
-            waveIn.WaveFormat = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(8000, 1);
+            waveIn.WaveFormat = new WaveFormat(8000, 1);
             waveIn.DataAvailable += WaveIn_DataAvailable;
 
             waveOut = new WaveOut();
@@ -38,6 +38,8 @@ namespace Babble.Core
 
         public void StopRecording()
         {
+            if (!CanRecord()) { return; }
+
             waveIn.StopRecording();
         }
 
@@ -48,21 +50,22 @@ namespace Babble.Core
 
         public void Record()
         {
+            if (!CanRecord()) { return; }
+
             waveIn.StartRecording();
         }
 
         public void SetRecordCallback(Action<byte[]> callback)
         {
-            try
-            {
-                RecordCallback = callback;
-            }
-            catch (Exception ex)
-            {
-                // exception thrown when you don't have recording device
-                // TODO: bubble this thing up to ui to let the user know
-                System.Diagnostics.Debug.WriteLine(ex.Message);
-            }
+            RecordCallback = callback;
+        }
+
+        private bool CanRecord()
+        {
+            if (waveIn == null) { return false; }
+            if (WaveIn.DeviceCount == 0) { return false; }
+
+            return true;
         }
     }
 }
