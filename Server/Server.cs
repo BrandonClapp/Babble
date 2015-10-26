@@ -118,7 +118,7 @@ namespace Server
             var channelFromServer = Channels.FirstOrDefault(c => c.Id == channelFromRequest.Id);
             if (channelFromServer == null)
             {
-                Console.WriteLine($"Unable to find channel id {channelFromRequest.Id} in server");
+                Console.WriteLine("Unable to find channel id {0} in server", channelFromRequest.Id);
                 return;
             }
             channelFromServer.Name = channelFromRequest.Name;
@@ -138,7 +138,7 @@ namespace Server
             var channelFromServer = Channels.FirstOrDefault(c => c.Id == channelFromRequest.Id);
             if (channelFromServer == null)
             {
-                Console.WriteLine($"Unable to find channel id {channelFromRequest.Id} in server");
+                Console.WriteLine("Unable to find channel id {0} in server", channelFromRequest.Id);
                 return;
             }
 
@@ -224,7 +224,7 @@ namespace Server
             var channel = Channels.FirstOrDefault(c => c.Id == channelId);
             if (channel == null)
             {
-                Console.WriteLine($"Unable to find channel id {channelId} to broadcast");
+                Console.WriteLine("Unable to find channel id {0} to broadcast", channelId);
                 return;
             }
 
@@ -249,7 +249,10 @@ namespace Server
                         return;
                     }
 
-                    Console.WriteLine("Broadcasting: {0}", message.Type);
+                    Console.WriteLine("Broadcasting: {0} from user {1} in channel {2}", 
+                        message.Type, 
+                        sourceClient.UserInfo.Username,
+                        sourceClient.UserInfo.ChannelId);
 
                     c.WriteMessage(message);
                 }

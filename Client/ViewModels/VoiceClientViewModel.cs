@@ -184,7 +184,7 @@ namespace Client.ViewModels
             dispatcher.Invoke(() =>
             {
                 ChannelTreeViewModel.Channels.Add(new ChannelViewModel(channel));
-                AddActivity($"Channel {channel.Id} : {channel.Name} created");
+                AddActivity("Channel {0} : {1} created", channel.Id, channel.Name);
             });
         }
 
@@ -194,7 +194,7 @@ namespace Client.ViewModels
             {
                 var channelVM = FindChannel(channel.Id);
                 channelVM.Name = channel.Name;
-                AddActivity($"Channel {channel.Id} : {channel.Name} renamed");
+                AddActivity("Channel {0} : {1} renamed", channel.Id, channel.Name);
             });
         }
 
@@ -204,7 +204,7 @@ namespace Client.ViewModels
             {
                 var channelVM = FindChannel(channel.Id);
                 ChannelTreeViewModel.Channels.Remove(channelVM);
-                AddActivity($"Channel {channel.Id} : {channel.Name} deleted");
+                AddActivity("Channel {0} : {1} deleted", channel.Id, channel.Name);
             });
         }
 
@@ -263,9 +263,10 @@ namespace Client.ViewModels
             });
         }
 
-        public void AddActivity(string s)
+        public void AddActivity(string s, params object[] args)
         {
-            Activity += Environment.NewLine + s;
+            Activity += Environment.NewLine;
+            Activity += string.Format(s, args);
         }
 
         private UserInfoViewModel FindUser(Guid id)
@@ -291,7 +292,7 @@ namespace Client.ViewModels
             var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userInfo.ChannelId);
             if (channel == null)
             {
-                AddActivity($"Unable to find channel {channel.Id} to add the user to");
+                AddActivity("Unable to find channel {0} to add the user to", channel.Id);
                 return;
             }
 
@@ -303,7 +304,7 @@ namespace Client.ViewModels
             var user = FindUser(userInfo.Id);
             if (user == null)
             {
-                AddActivity($"Unable to find user {user.Username} from channel {user.ChannelId} in order to remove user");
+                AddActivity("Unable to find user {0} from channel {1} in order to remove user", user.Username, user.ChannelId);
                 return;
             }
 
