@@ -12,23 +12,20 @@ namespace Client.ViewModels
     {
         VoiceClient client = new VoiceClient();
         System.Windows.Threading.Dispatcher dispatcher = System.Windows.Application.Current.Dispatcher;
-        System.Timers.Timer periodicUpdateTimer = new System.Timers.Timer(700); // periodic update GUI property that is timer based
+        // periodic update GUI property that is timer based
         // so one of them is the talking status
         // if the user stopped talking for couple seconds, considered they're done, so update the UI
+        System.Timers.Timer periodicUpdateTimer = new System.Timers.Timer(700);
 
+        Dictionary<MessageType, Action<Message>> messageHandlers = new Dictionary<MessageType, Action<Message>>();
+  
         public VoiceClientViewModel()
         {
-            client.SomeUserConnected += SomeUserConnectedHandler;
-            client.SomeUserDisconnected += SomeUserDisconnectedHandler;
-            client.SomeUserTalking += SomeUserTalkingHandler;
-            client.SomeUserChatting += SomeUserChattingHandler;
-            client.SomeUserChangedChannel += SomeUserChangedChannelHandler;
-            client.ChannelCreated += ChannelCreatedHandler;
-            client.ChannelRenamed += ChannelRenamedHandler;
-            client.ChannelDeleted += ChannelDeletedHandler;
-            client.RefreshChannels += RefreshChannelsHandler;
-            client.Connected += ConnectedHandler;
-            client.Disconnected += DisconnectedHandler;
+            client.Connected += Client_Connected;
+            client.Disconnected += Client_Disconnected;
+            client.MessageReceived += Client_MessageReceived; ;
+
+            periodicUpdateTimer.Elapsed += PeriodicUpdateTimer_Elapsed;
 
             ConnectCommand = new DelegateCommand(ConnectCommandHandler);
             DisconnectCommand = new DelegateCommand(DisconnectCommandHandler);
@@ -38,7 +35,58 @@ namespace Client.ViewModels
             DeleteChannelCommand = new DelegateCommand(DeleteChannelCommandHandler);
             SendChatMessageCommand = new DelegateCommand(SendChatMessageCommandHandler);
 
-            periodicUpdateTimer.Elapsed += PeriodicUpdateTimer_Elapsed;
+            messageHandlers.Add(MessageType.Chat, SomeUserChattingHandler);
+            messageHandlers.Add(MessageType.Voice, SomeUserTalkingHandler);
+            messageHandlers.Add(MessageType.UserConnected, SomeUserConnectedHandler);
+            messageHandlers.Add(MessageType.UserDisconnected, SomeUserDisconnectedHandler);
+            messageHandlers.Add(MessageType.GetAllChannelsResponse, RefreshChannelsHandler);
+            messageHandlers.Add(MessageType.CreateChannelResponse, ChannelCreatedHandler);
+            messageHandlers.Add(MessageType.RenameChannelResponse, ChannelRenamedHandler);
+            messageHandlers.Add(MessageType.DeleteChannelResponse, ChannelDeletedHandler);
+            messageHandlers.Add(MessageType.UserChangeChannelResponse, SomeUserChangedChannelHandler);
+        }
+
+        // EVENT handling here
+
+        private void Client_Connected(bool successful, string responseMessage)
+        {
+            if (successful)
+            {
+                OnPropertyChanged(nameof(IsConnected));
+                periodicUpdateTimer.Start();
+                AddActivity("Connected: Message From Host: {0}", responseMessage);
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Could not connect to host. Error: {0}", responseMessage);
+            }
+        }
+
+        private void Client_Disconnected()
+        {
+            dispatcher.Invoke(() =>
+            {
+                ChannelTreeViewModel = null;
+                OnPropertyChanged(nameof(IsConnected));
+                AddActivity("Disconnected");
+                periodicUpdateTimer.Stop();
+            });
+        }
+
+        private void Client_MessageReceived(Message message)
+        {
+            Action<Message> handler = null;
+            messageHandlers.TryGetValue(message.Type, out handler);
+            if (handler == null)
+            {
+                AddActivity("Error, unable to find a message handler for message type: {0}", message.Type);
+                return;
+            }
+
+            dispatcher.Invoke(() =>
+            {
+                handler(message);
+            });
         }
 
         private void PeriodicUpdateTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -56,7 +104,7 @@ namespace Client.ViewModels
             }
         }
 
-        public UserInfo UserInfo { get { return client.UserInfo; } }
+        public UserInfo ConnectedUser { get { return client.ConnectedUser; } }
 
         private ChannelTreeViewModel _ChannelTreeViewModel;
         public ChannelTreeViewModel ChannelTreeViewModel
@@ -72,11 +120,9 @@ namespace Client.ViewModels
             set { _Activity = value;OnPropertyChanged(nameof(Activity)); }
         }
 
-        private bool _IsConnected;
         public bool IsConnected
         {
-            get { return _IsConnected; }
-            set { _IsConnected = value;OnPropertyChanged(nameof(IsConnected)); }
+            get { return client.IsConnected; }
         }
 
         private string _ChatMessage;
@@ -95,7 +141,7 @@ namespace Client.ViewModels
                 return;
             }
 
-            client.SendChatMessage(ChatMessage);
+            client.WriteMessage(Message.Create(MessageType.Chat, new ChatData() {UserInfo = ConnectedUser, Data = ChatMessage }));
             ChatMessage = string.Empty;
         }
 
@@ -109,16 +155,12 @@ namespace Client.ViewModels
                 {
                     var host = ncw.Host;
                     var port = ncw.Port;
-                    AddActivity("Attempting to connect to " + host + ":" + port + ".");
+                    AddActivity("Attempting to connect to {0} : {1}", host, port);
                     client.Connect(host, port, ncw.Username, ncw.Password);
-                    IsConnected = true;
-                    periodicUpdateTimer.Start();
                 }
                 catch (Exception ex)
                 {
                     AddActivity(ex.Message);
-                    IsConnected = false;
-                    periodicUpdateTimer.Stop();
                 }
             }
         }
@@ -178,94 +220,63 @@ namespace Client.ViewModels
             client.WriteMessage(Message.Create(MessageType.DeleteChannelRequest, new Channel() { Id = channel.Id }));
         }
 
-        private void ConnectedHandler(bool successful, string message)
+        private void ChannelCreatedHandler(Message message)
         {
-            if (successful)
+            var channel = message.GetData<Channel>();
+            ChannelTreeViewModel.Channels.Add(new ChannelViewModel(channel));
+            AddActivity("Channel {0} : {1} created", channel.Id, channel.Name);
+        }
+
+        private void ChannelRenamedHandler(Message message)
+        {
+            var channel = message.GetData<Channel>();
+            var channelVM = FindChannel(channel.Id);
+            channelVM.Name = channel.Name;
+            AddActivity("Channel {0} : {1} renamed", channel.Id, channel.Name);
+        }
+
+        private void ChannelDeletedHandler(Message message)
+        {
+            var channel = message.GetData<Channel>();
+            var channelVM = FindChannel(channel.Id);
+            ChannelTreeViewModel.Channels.Remove(channelVM);
+            AddActivity("Channel {0} : {1} deleted", channel.Id, channel.Name);
+        }
+
+        private void RefreshChannelsHandler(Message message)
+        {
+            var channels = message.GetData<List<Channel>>();
+            ChannelTreeViewModel = new ChannelTreeViewModel(channels);
+            AddActivity("Ain't nobody dope as me I'm dressed so fresh so clean");
+        }
+
+        private void SomeUserConnectedHandler(Message message)
+        {
+            var userInfo = message.GetData<UserInfo>();
+
+            var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userInfo.ChannelId);
+            if (channel != null)
             {
-                AddActivity("Connected: Message From Host: " + message);
+                channel.Users.Add(new UserInfoViewModel(userInfo));
             }
-            else
+            AddActivity(string.Format("{0} Connected", userInfo.Username));
+        }
+
+        private void SomeUserDisconnectedHandler(Message message)
+        {
+            var userInfo = message.GetData<UserInfo>();
+            foreach (var channel in ChannelTreeViewModel.Channels)
             {
-                System.Windows.MessageBox.Show("Could not connect to host. Error: " + message);
+                channel.Users.Remove(channel.Users.FirstOrDefault(u => u.Id == userInfo.Id));
             }
+            AddActivity(string.Format("{0} Disconnected", userInfo.Username));
         }
 
-        private void DisconnectedHandler()
+        private void SomeUserTalkingHandler(Message message)
         {
-            dispatcher.Invoke(() =>
-            {
-                ChannelTreeViewModel = null;
-                IsConnected = false;
-                AddActivity("Disconnected");
-                periodicUpdateTimer.Stop();
-            });
-        }
-
-        private void ChannelCreatedHandler(Channel channel)
-        {
-            dispatcher.Invoke(() =>
-            {
-                ChannelTreeViewModel.Channels.Add(new ChannelViewModel(channel));
-                AddActivity("Channel {0} : {1} created", channel.Id, channel.Name);
-            });
-        }
-
-        private void ChannelRenamedHandler(Channel channel)
-        {
-            dispatcher.Invoke(() =>
-            {
-                var channelVM = FindChannel(channel.Id);
-                channelVM.Name = channel.Name;
-                AddActivity("Channel {0} : {1} renamed", channel.Id, channel.Name);
-            });
-        }
-
-        private void ChannelDeletedHandler(Channel channel)
-        {
-            dispatcher.Invoke(() =>
-            {
-                var channelVM = FindChannel(channel.Id);
-                ChannelTreeViewModel.Channels.Remove(channelVM);
-                AddActivity("Channel {0} : {1} deleted", channel.Id, channel.Name);
-            });
-        }
-
-        private void RefreshChannelsHandler(List<Channel> obj)
-        {
-            dispatcher.Invoke(() =>
-            {
-                ChannelTreeViewModel = new ChannelTreeViewModel(obj);
-                AddActivity("Ain't nobody dope as me I'm dressed so fresh so clean");
-            });
-        }
-
-        private void SomeUserConnectedHandler(UserInfo userInfo)
-        {
-            dispatcher.Invoke(() =>
-            {
-                var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userInfo.ChannelId);
-                if (channel != null)
-                {
-                    channel.Users.Add(new UserInfoViewModel(userInfo));
-                }
-                AddActivity(string.Format("{0} Connected", userInfo.Username));
-            });
-        }
-
-        private void SomeUserDisconnectedHandler(UserInfo userInfo)
-        {
-            dispatcher.Invoke(() =>
-            {
-                foreach (var channel in ChannelTreeViewModel.Channels)
-                {
-                    channel.Users.Remove(channel.Users.FirstOrDefault(u => u.Id == userInfo.Id));
-                }
-                AddActivity(string.Format("{0} Disconnected", userInfo.Username));
-            });
-        }
-
-        private void SomeUserTalkingHandler(UserInfo userInfo)
-        {
+            var voiceData = message.GetData<VoiceData>();
+            client.PlaySound(voiceData.GetDataInBytes());
+            var userInfo = voiceData.UserInfo;
             var user = FindUser(userInfo.Id);
             if (user == null)
             {
@@ -276,18 +287,17 @@ namespace Client.ViewModels
             user.IsTalking = true;
         }
 
-        private void SomeUserChattingHandler(ChatData chatData)
+        private void SomeUserChattingHandler(Message message)
         {
+            var chatData = message.GetData<ChatData>();
             AddActivity("{0}: {1}", chatData.UserInfo.Username, chatData.Data);
         }
 
-        private void SomeUserChangedChannelHandler(UserInfo userInfo)
+        private void SomeUserChangedChannelHandler(Message message)
         {
-            dispatcher.Invoke(() =>
-            {
-                RemoveUserFromChannels(userInfo);
-                AddUserToChannel(userInfo);
-            });
+            var userInfo = message.GetData<UserInfo>();
+            RemoveUserFromChannels(userInfo);
+            AddUserToChannel(userInfo);
         }
 
         public void AddActivity(string s, params object[] args)

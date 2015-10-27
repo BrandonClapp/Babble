@@ -48,7 +48,7 @@ namespace Server
 
         private void HandleConnectedClient(NetworkClient client)
         {
-            while (!client.IsDisconnected)
+            while (client.IsConnected)
             {
                 var message = client.ReadMessage();
                 if (message == null)
@@ -93,23 +93,23 @@ namespace Server
             }
 
             // If the handler no longer running, do some clean up here
-            BroadcastAll(client, Message.Create(MessageType.UserDisconnected, client.UserInfo));
+            BroadcastAll(client, Message.Create(MessageType.UserDisconnected, client.ConnectedUser));
             client.Disconnect();
             ClientList.Remove(client);
 
             // refactor this
-            RemoveUserFromChannel(client.UserInfo);
-            Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.UserInfo.Username, ClientList.Count);
+            RemoveUserFromChannel(client.ConnectedUser);
+            Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.ConnectedUser.Username, ClientList.Count);
         }
 
         private void ChangeChannelRequestReceived(NetworkClient client, Message message)
         {
-            RemoveUserFromChannel(client.UserInfo);
+            RemoveUserFromChannel(client.ConnectedUser);
 
             // todo: validation that the user can join target channel.
-            AddUserToChannel(client.UserInfo, (int)message.Data);
+            AddUserToChannel(client.ConnectedUser, (int)message.Data);
 
-            BroadcastAll(client, Message.Create(MessageType.UserChangeChannelResponse, client.UserInfo), true);
+            BroadcastAll(client, Message.Create(MessageType.UserChangeChannelResponse, client.ConnectedUser), true);
         }
 
         private void RenameChannelRequestReceived(NetworkClient client, Message message)
@@ -160,7 +160,6 @@ namespace Server
         {
             var credential = message.GetData<UserCredential>();
             var userInfo = new UserInfo();
-            client.UserInfo = userInfo;
             var response = new UserCredentialResponse();
             response.UserInfo = userInfo;
             // Handle credential authorization
@@ -168,9 +167,10 @@ namespace Server
             {
                 userInfo.Id = Guid.NewGuid();
                 userInfo.Username = "Anon#" + new Random().Next(5000);
+                client.ConnectedUser = userInfo;
+
                 response.IsAuthenticated = true;
                 response.Message = "Great success!";
-
                 AddUserToChannel(userInfo, 0);
                 BroadcastAll(client, Message.Create(MessageType.UserConnected, userInfo));
             }
@@ -220,7 +220,7 @@ namespace Server
 
         private void BroadcastChannel(NetworkClient sourceClient, Message message, bool includeSelf = false)
         {
-            var channelId = sourceClient.UserInfo.ChannelId;
+            var channelId = sourceClient.ConnectedUser.ChannelId;
             var channel = Channels.FirstOrDefault(c => c.Id == channelId);
             if (channel == null)
             {
@@ -229,7 +229,7 @@ namespace Server
             }
 
             var targetClients = from client in ClientList
-                                     join user in channel.Users on client.UserInfo.Id equals user.Id
+                                     join user in channel.Users on client.ConnectedUser.Id equals user.Id
                                      select client;
             
             if (targetClients.Any())
@@ -251,8 +251,8 @@ namespace Server
 
                     Console.WriteLine("Broadcasting: {0} from user {1} in channel {2}", 
                         message.Type, 
-                        sourceClient.UserInfo.Username,
-                        sourceClient.UserInfo.ChannelId);
+                        sourceClient.ConnectedUser.Username,
+                        sourceClient.ConnectedUser.ChannelId);
 
                     c.WriteMessage(message);
                 }

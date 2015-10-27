@@ -14,54 +14,79 @@ namespace Client
 {
     class VoiceClient
     {
-        private NetworkClient Client;
-        public UserInfo UserInfo = new UserInfo();
-        public event Action<UserInfo> SomeUserConnected;
-        public event Action<UserInfo> SomeUserDisconnected;
-        public event Action<UserInfo> SomeUserTalking;
-        public event Action<ChatData> SomeUserChatting;
-        public event Action<UserInfo> SomeUserChangedChannel;
-        public event Action<Channel> ChannelCreated;
-        public event Action<Channel> ChannelRenamed;
-        public event Action<Channel> ChannelDeleted;
-        public event Action<List<Channel>> RefreshChannels;
+        private NetworkClient networkClient;
+        private ISoundEngine soundEngine;
+
         public event Action<bool, string> Connected;
         public event Action Disconnected;
-        public ISoundEngine SoundEngine;
+        public event Action<Message> MessageReceived;
 
         public VoiceClient()
         {
-            SoundEngine = new NAudioSoundEngine();
-            SoundEngine.Init();
-            SoundEngine.SetRecordCallback(SoundEngineRecordCallback);
+            soundEngine = new NAudioSoundEngine();
+            soundEngine.Init();
+            soundEngine.SetRecordCallback(SoundEngineRecordCallback);
         }
+
+        public UserInfo ConnectedUser { get { return networkClient == null ? null : networkClient.ConnectedUser; } }
+        public bool IsConnected { get { return networkClient == null ? false : networkClient.IsConnected; } }
 
         private void SoundEngineRecordCallback(byte[] data)
         {
-            if (GetAsyncKeyState(0x11) == 0 || Client.IsDisconnected) return;
+            if (GetAsyncKeyState(0x11) == 0 || !IsConnected) return;
             var voiceData = new VoiceData();
-            voiceData.UserInfo = UserInfo;
+            voiceData.UserInfo = ConnectedUser;
             voiceData.SetDataFromBytes(data);
             WriteMessage(Message.Create(MessageType.Voice, voiceData));
         }
 
-        private object WriteLock = new object();
-        public void WriteMessage(Message message)
+        // HANDLER calls with null check
+
+        private void OnConnected(bool connected, string responseMessage)
         {
-            lock(WriteLock)
+            var handler = Connected;
+            if (handler != null)
             {
-                Client.WriteMessage(message);
+                handler(connected, responseMessage);
             }
         }
 
-        public Message ReadMessage()
+        private void OnDisconnected()
         {
-            return Client.ReadMessage();
+            var handler = Disconnected;
+            if (handler != null)
+            {
+                handler();
+            }
         }
 
-        public void StartReading()
+        private void OnMessageReceived(Message message)
         {
-            while (!Client.IsDisconnected)
+            var handler = MessageReceived;
+            if (handler != null)
+            {
+                handler(message);
+            }
+        }
+
+        private Message ReadMessage()
+        {
+            return networkClient.ReadMessage();
+        }
+
+        public void WriteMessage(Message message)
+        {
+            networkClient.WriteMessage(message);
+        }
+
+        public void PlaySound(byte[] data)
+        {
+            soundEngine.Play(data);
+        }
+
+        private void StartReading()
+        {
+            while (IsConnected)
             {
                 var message = ReadMessage();
                 if (message == null)
@@ -69,76 +94,24 @@ namespace Client
                     break;
                 }
 
-                switch (message.Type)
-                {
-                    case MessageType.Chat:
-                        HandleChatMessage(message.GetData<ChatData>());
-                        break;
-                    case MessageType.Voice:
-                        var voiceData = message.GetData<VoiceData>();
-                        HandleVoiceMessage(voiceData);
-                        break;
-                    case MessageType.UserConnected:
-                        var userInfo = message.GetData<UserInfo>();
-                        SomeUserConnected(userInfo);
-                        break;
-                    case MessageType.UserDisconnected:
-                        var userInfo2 = message.GetData<UserInfo>();
-                        SomeUserDisconnected(userInfo2);
-                        break;
-                    case MessageType.CreateChannelResponse:
-                        var channel = message.GetData<Channel>();
-                        ChannelCreated(channel);
-                        break;
-                    case MessageType.GetAllChannelsResponse:
-                        var channels = message.GetData<List<Channel>>();
-                        RefreshChannels(channels);
-                        break;
-                    case MessageType.RenameChannelResponse:
-                        ChannelRenamed(message.GetData<Channel>());
-                        break;
-                    case MessageType.DeleteChannelResponse:
-                        ChannelDeleted(message.GetData<Channel>());
-                        break;
-                    case MessageType.UserChangeChannelResponse:
-                        var userThatChangedChannel = message.GetData<UserInfo>();
-                        SomeUserChangedChannel(userThatChangedChannel);
-                        break;
-                }
+                OnMessageReceived(message);
             }
-        }
-
-        private void HandleChatMessage(ChatData chatData)
-        {
-            SomeUserChatting(chatData);
-        }
-
-        private void HandleVoiceMessage(VoiceData voiceData)
-        {
-            SoundEngine.Play(voiceData.GetDataInBytes());
-            SomeUserTalking(voiceData.UserInfo);
-        }
-
-        public void SendChatMessage(string chatMessage)
-        {
-            WriteMessage(Message.Create(MessageType.Chat, new ChatData() { UserInfo = UserInfo, Data = chatMessage }));
         }
 
         public void Connect(string host, int port, string username, string password)
 
         {
-            if (Client != null)
+            if (networkClient != null)
             {
                 Disconnect();
-                Client = null;
             }
 
-            Client = NetworkClient.Connect(host, port);
-            Client.WriteMessage(Message.Create(MessageType.CredentialRequest, new UserCredential() { Username = username, Password = password }));
-            var response = Client.ReadMessage().GetData<UserCredentialResponse>();
+            networkClient = NetworkClient.Connect(host, port);
+            networkClient.WriteMessage(Message.Create(MessageType.CredentialRequest, new UserCredential() { Username = username, Password = password }));
+            var response = networkClient.ReadMessage().GetData<UserCredentialResponse>();
             if (response.IsAuthenticated)
             {
-                UserInfo = response.UserInfo;
+                networkClient.ConnectedUser = response.UserInfo;
 
                 Task.Factory.StartNew(() =>
                 {
@@ -148,34 +121,35 @@ namespace Client
                     Disconnect();
                 }, TaskCreationOptions.LongRunning);
 
-                SoundEngine.Record();
-                Connected(true, response.Message);
-                Client.WriteMessage(Message.Create(MessageType.GetAllChannelsRequest));
+                soundEngine.Record();
+                OnConnected(true, response.Message);
+                networkClient.WriteMessage(Message.Create(MessageType.GetAllChannelsRequest));
             }
             else
             {
-                Connected(false, response.Message);
-                Client.Disconnect();
+                OnConnected(false, response.Message);
+                networkClient.Disconnect();
             }
         }
 
         public void Disconnect()
         {
-            if (Client == null)
+            if (networkClient == null)
             {
                 return;
             }
 
-            if (!Client.IsDisconnected)
+            if (IsConnected)
             {
-                Client.WriteMessage(Message.Create(MessageType.UserDisconnected, UserInfo));
+                networkClient.WriteMessage(Message.Create(MessageType.UserDisconnected, ConnectedUser));
             }
 
-            SoundEngine.StopRecording();
-            Client.Disconnect();
-            Client = null;
+            soundEngine.StopRecording();
+            networkClient.Disconnect();
+            networkClient.ConnectedUser = null;
+            networkClient = null;
 
-            Disconnected();
+            OnDisconnected();
         }
 
         [DllImport("User32.dll")]

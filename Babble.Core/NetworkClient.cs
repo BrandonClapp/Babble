@@ -10,38 +10,35 @@ namespace Babble.Core
 {
     public class NetworkClient
     {
-        public NetworkClient(TcpClient client)
+        private TcpClient tcpClient;
+        private StreamReader reader;
+        private StreamWriter writer;
+
+        public NetworkClient(TcpClient tcpClient)
         {
-            Client = client;
-            Reader = new StreamReader(Client.GetStream());
-            Writer = new StreamWriter(Client.GetStream());
-            Writer.AutoFlush = true;
+            if (tcpClient == null) { throw new ArgumentNullException(nameof(tcpClient)); }
+
+            this.tcpClient = tcpClient;
+            reader = new StreamReader(tcpClient.GetStream());
+            writer = new StreamWriter(tcpClient.GetStream());
+            writer.AutoFlush = true;
         }
 
         public static NetworkClient Connect(string host, int port)
         {
             var tcpClient = new TcpClient();
             tcpClient.Connect(host, port);
-            NetworkClient client = new NetworkClient(tcpClient);
-            return client;
+            NetworkClient networkClient = new NetworkClient(tcpClient);
+            return networkClient;
         }
 
-        private TcpClient Client { get; set; }
-        private StreamReader Reader { get; set; }
-        private StreamWriter Writer { get; set; }
-        public UserInfo UserInfo { get; set; }
+        public UserInfo ConnectedUser { get; set; }
 
-        public bool IsDisconnected
-        {
-            get
-            {
-                return !Client.Connected;
-            }
-        }
+        public bool IsConnected { get { return tcpClient.Connected; } }
 
         public void Disconnect()
         {
-            Client.Close();
+            tcpClient.Close();
         }
 
         public Message ReadMessage()
@@ -49,7 +46,7 @@ namespace Babble.Core
             Message message = null;
             try
             {
-                message = Message.FromJson(Reader.ReadLine());
+                message = Message.FromJson(reader.ReadLine());
             }
             catch (Exception ex)
             {
@@ -60,7 +57,7 @@ namespace Babble.Core
 
         public void WriteMessage(Message message)
         {
-            Writer.WriteLine(message.ToJson());
+            writer.WriteLine(message.ToJson());
         }
     }
 }
