@@ -6,22 +6,28 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using Server.Services;
 
 namespace Server
 {
     class Server
     {
-        private const int LobbyChannelId = 0;
+        private const int LobbyChannelId = 1;
         private readonly int Port = 8888;
         private readonly IPAddress IPAddress = IPAddress.Any;
         private List<NetworkClient> connectedClients = new List<NetworkClient>();
         private List<Channel> channels = new List<Channel>();
         private Dictionary<MessageType, Action<NetworkClient, Message>> messageHandlers = new Dictionary<MessageType, Action<NetworkClient, Message>>();
 
+        private DatabaseService databaseService = new DatabaseService();
+        private ChannelService channelService = new ChannelService();
+
         public Server()
         {
-            InitDefaultChannels();
             InitMessageHandlers();
+
+            InitDatabase();
+            InitDefaultChannels();
         }
 
         public void Start()
@@ -36,21 +42,22 @@ namespace Server
 
                 Task.Factory.StartNew(() =>
                 {
-                    HandleConnectedClient(client);
+                    try
+                    {
+                        HandleConnectedClient(client);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        Console.WriteLine(ex.StackTrace);
+                    }
                 },TaskCreationOptions.LongRunning);
 
                 Console.WriteLine("User Connected. Now you have {0} users connected", connectedClients.Count);
             }
         }
 
-        // Init default channels
-        private void InitDefaultChannels()
-        {
-            channels.Clear();
-            channels.Add(new Channel { Name = "Lobby Channel", Id = LobbyChannelId });
-            channels.Add(new Channel { Name = "Another Channel", Id = 1 });
-            channels.Add(new Channel { Name = "Again Channel", Id = 2 });
-        }
+        
 
         private void InitMessageHandlers()
         {
@@ -64,6 +71,19 @@ namespace Server
             messageHandlers.Add(MessageType.CreateChannelRequest, CreateChannelRequestHandler);
             messageHandlers.Add(MessageType.RenameChannelRequest, RenameChannelRequestHandler);
             messageHandlers.Add(MessageType.DeleteChannelRequest, DeleteChannelRequestHandler);
+        }
+
+        private void InitDatabase()
+        {
+            databaseService.InitDatabase();
+        }
+
+        private void InitDefaultChannels()
+        {
+            channels.Clear();
+
+            var channelsFromDb = channelService.GetAllChannels();
+            channels.AddRange(channelsFromDb);
         }
 
         private void ChatHandler(NetworkClient client, Message message)
@@ -127,10 +147,10 @@ namespace Server
 
         private void CreateChannelRequestHandler(NetworkClient client, Message message)
         {
-            var channel = message.GetData<Channel>();
-            channel.Id = channels.Select(c => c.Id).Max() + 1;
-            AddChannel(channel);
-            BroadcastAll(client, Message.Create(MessageType.CreateChannelResponse, channel), true);
+            var channelToCreate = message.GetData<Channel>();
+            var createdChannel = channelService.CreateChannel(channelToCreate.Name);
+            AddChannel(createdChannel);
+            BroadcastAll(client, Message.Create(MessageType.CreateChannelResponse, createdChannel), true);
         }
 
         private void RenameChannelRequestHandler(NetworkClient client, Message message)
@@ -142,7 +162,8 @@ namespace Server
                 Console.WriteLine("Unable to find channel id {0} in server", channelFromRequest.Id);
                 return;
             }
-            channelFromServer.Name = channelFromRequest.Name;
+            channelService.UpdateChannel(channelFromRequest); // ensure you can update in database first
+            channelFromServer.Name = channelFromRequest.Name; // then update the channel object currently serving
             BroadcastAll(client, Message.Create(MessageType.RenameChannelResponse, channelFromRequest), true);
         }
 
@@ -162,6 +183,8 @@ namespace Server
                 Console.WriteLine("Unable to find channel id {0} in server", channelFromRequest.Id);
                 return;
             }
+
+            channelService.DeleteChannel(channelFromServer.Id);
 
             foreach (var user in channelFromServer.Users)
             {
