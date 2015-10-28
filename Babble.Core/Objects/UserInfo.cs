@@ -8,14 +8,7 @@ namespace Babble.Core.Objects
 {
     public class UserInfo
     {
-        public Guid ConnectionId { get; set; }
         public int Id { get; set; }
         public string Username { get; set; }
-        public bool Authenticated { get; set; }
-        public int ChannelId { get; set; }
     }
-
-    
-
-    
 }

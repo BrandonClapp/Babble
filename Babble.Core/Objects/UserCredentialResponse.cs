@@ -10,6 +10,6 @@ namespace Babble.Core.Objects
     {
         public bool IsAuthenticated { get; set; }
         public string Message { get; set; }
-        public UserInfo UserInfo { get; set; }
+        public UserSession UserSession { get; set; }
     }
 }

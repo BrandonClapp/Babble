@@ -5,22 +5,22 @@ namespace Client.ViewModels
 {
     class ChannelViewModel : ViewModelBase
     {
-        private Channel channel;
+        private ChannelSession channelSession;
 
-        public ChannelViewModel(Channel channel)
+        public ChannelViewModel(ChannelSession channelSession)
         {
-            this.channel = channel;
+            this.channelSession = channelSession;
             Users = new ObservableCollection<UserInfoViewModel>();
 
-            foreach (var user in channel.Users)
+            foreach (var userSession in channelSession.UserSessions)
             {
-                var userVM = new UserInfoViewModel(user);
+                var userVM = new UserInfoViewModel(userSession);
                 Users.Add(userVM);
             }
         }
 
-        public int Id { get { return channel.Id; } }
-        public string Name { get { return channel.Name; } set { channel.Name = value; OnPropertyChanged(nameof(Name)); } }
+        public int Id { get { return channelSession.Channel.Id; } }
+        public string Name { get { return channelSession.Channel.Name; } set { channelSession.Channel.Name = value; OnPropertyChanged(nameof(Name)); } }
 
         public ObservableCollection<UserInfoViewModel> Users { get; private set; }
 

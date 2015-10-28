@@ -29,14 +29,14 @@ namespace Client
             soundEngine.SetRecordCallback(SoundEngineRecordCallback);
         }
 
-        public UserInfo ConnectedUser { get { return networkClient == null ? null : networkClient.ConnectedUser; } }
+        public UserSession UserSession { get { return networkClient == null ? null : networkClient.UserSession; } }
         public bool IsConnected { get { return networkClient == null ? false : networkClient.IsConnected; } }
 
         private void SoundEngineRecordCallback(byte[] data)
         {
             if (GetAsyncKeyState(0x11) == 0 || !IsConnected) return;
             var voiceData = new VoiceData();
-            voiceData.UserInfo = ConnectedUser;
+            voiceData.UserSession = UserSession;
             voiceData.SetDataFromBytes(data);
             WriteMessage(Message.Create(MessageType.Voice, voiceData));
         }
@@ -112,7 +112,7 @@ namespace Client
             var response = networkClient.ReadMessage().GetData<UserCredentialResponse>();
             if (response.IsAuthenticated)
             {
-                networkClient.ConnectedUser = response.UserInfo;
+                networkClient.UserSession = response.UserSession;
 
                 Task.Factory.StartNew(() =>
                 {
@@ -142,12 +142,12 @@ namespace Client
 
             if (IsConnected)
             {
-                networkClient.WriteMessage(Message.Create(MessageType.UserDisconnected, ConnectedUser));
+                networkClient.WriteMessage(Message.Create(MessageType.UserDisconnected, UserSession));
             }
 
             soundEngine.StopRecording();
             networkClient.Disconnect();
-            networkClient.ConnectedUser = null;
+            networkClient.UserSession = null;
             networkClient = null;
 
             OnDisconnected();

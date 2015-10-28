@@ -104,7 +104,7 @@ namespace Client.ViewModels
             }
         }
 
-        public UserInfo ConnectedUser { get { return client.ConnectedUser; } }
+        public UserSession UserSession { get { return client.UserSession; } }
 
         private ChannelTreeViewModel _ChannelTreeViewModel;
         public ChannelTreeViewModel ChannelTreeViewModel
@@ -141,7 +141,7 @@ namespace Client.ViewModels
                 return;
             }
 
-            client.WriteMessage(Message.Create(MessageType.Chat, new ChatData() {UserInfo = ConnectedUser, Data = ChatMessage }));
+            client.WriteMessage(Message.Create(MessageType.Chat, new ChatData() { UserSession = UserSession, Data = ChatMessage }));
             ChatMessage = string.Empty;
         }
 
@@ -200,7 +200,6 @@ namespace Client.ViewModels
             {
                 var newChannelName = window.ChannelNameTextBox.Text;
                 client.WriteMessage(Message.Create(MessageType.RenameChannelRequest, new Channel() { Id = channel.Id, Name = newChannelName }));
-
             }
         }
 
@@ -222,9 +221,9 @@ namespace Client.ViewModels
 
         private void ChannelCreatedHandler(Message message)
         {
-            var channel = message.GetData<Channel>();
-            ChannelTreeViewModel.Channels.Add(new ChannelViewModel(channel));
-            AddActivity("Channel {0} : {1} created", channel.Id, channel.Name);
+            var channelSession = message.GetData<ChannelSession>();
+            ChannelTreeViewModel.Channels.Add(new ChannelViewModel(channelSession));
+            AddActivity("Channel {0} : {1} created", channelSession.Channel.Id, channelSession.Channel.Name);
         }
 
         private void ChannelRenamedHandler(Message message)
@@ -245,59 +244,59 @@ namespace Client.ViewModels
 
         private void RefreshChannelsHandler(Message message)
         {
-            var channels = message.GetData<List<Channel>>();
+            var channels = message.GetData<List<ChannelSession>>();
             ChannelTreeViewModel = new ChannelTreeViewModel(channels);
             AddActivity("Ain't nobody dope as me I'm dressed so fresh so clean");
         }
 
         private void SomeUserConnectedHandler(Message message)
         {
-            var userInfo = message.GetData<UserInfo>();
+            var userSession = message.GetData<UserSession>();
 
-            var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userInfo.ChannelId);
+            var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userSession.ChannelId);
             if (channel != null)
             {
-                channel.Users.Add(new UserInfoViewModel(userInfo));
+                channel.Users.Add(new UserInfoViewModel(userSession));
             }
-            AddActivity(string.Format("{0} Connected", userInfo.Username));
+            AddActivity(string.Format("{0} Connected", userSession.UserInfo.Username));
         }
 
         private void SomeUserDisconnectedHandler(Message message)
         {
-            var userInfo = message.GetData<UserInfo>();
+            var user = message.GetData<UserSession>();
             foreach (var channel in ChannelTreeViewModel.Channels)
             {
-                channel.Users.Remove(channel.Users.FirstOrDefault(u => u.ConnectionId == userInfo.ConnectionId));
+                channel.Users.Remove(channel.Users.FirstOrDefault(u => u.ConnectionId == user.ConnectionId));
             }
-            AddActivity(string.Format("{0} Disconnected", userInfo.Username));
+            AddActivity(string.Format("{0} Disconnected", user.UserInfo.Username));
         }
 
         private void SomeUserTalkingHandler(Message message)
         {
             var voiceData = message.GetData<VoiceData>();
             client.PlaySound(voiceData.GetDataInBytes());
-            var userInfo = voiceData.UserInfo;
-            var user = FindUser(userInfo.ConnectionId);
-            if (user == null)
+            var userSession = voiceData.UserSession;
+            var userVM = FindUser(userSession.ConnectionId);
+            if (userVM == null)
             {
                 return;
             }
 
-            user.BeginTalkingTime = DateTime.Now;
-            user.IsTalking = true;
+            userVM.BeginTalkingTime = DateTime.Now;
+            userVM.IsTalking = true;
         }
 
         private void SomeUserChattingHandler(Message message)
         {
             var chatData = message.GetData<ChatData>();
-            AddActivity("{0}: {1}", chatData.UserInfo.Username, chatData.Data);
+            AddActivity("{0}: {1}", chatData.UserSession.UserInfo.Username, chatData.Data);
         }
 
         private void SomeUserChangedChannelHandler(Message message)
         {
-            var userInfo = message.GetData<UserInfo>();
-            RemoveUserFromChannels(userInfo);
-            AddUserToChannel(userInfo);
+            var userSession = message.GetData<UserSession>();
+            RemoveUserFromChannels(userSession);
+            AddUserToChannel(userSession);
         }
 
         public void AddActivity(string s, params object[] args)
@@ -306,11 +305,11 @@ namespace Client.ViewModels
             Activity += string.Format(s, args);
         }
 
-        private UserInfoViewModel FindUser(Guid id)
+        private UserInfoViewModel FindUser(Guid connectionId)
         {
             var users = from c in ChannelTreeViewModel.Channels
                         from u in c.Users
-                        where u.ConnectionId == id
+                        where u.ConnectionId == connectionId
                         select u;
 
             return users.FirstOrDefault();
@@ -324,24 +323,24 @@ namespace Client.ViewModels
             return users.ToList();
         }
 
-        private void AddUserToChannel(UserInfo userInfo)
+        private void AddUserToChannel(UserSession userSession)
         {
-            var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userInfo.ChannelId);
+            var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userSession.ChannelId);
             if (channel == null)
             {
                 AddActivity("Unable to find channel {0} to add the user to", channel.Id);
                 return;
             }
 
-            channel.Users.Add(new UserInfoViewModel(userInfo));
+            channel.Users.Add(new UserInfoViewModel(userSession));
         }
 
-        private void RemoveUserFromChannels(UserInfo userInfo)
+        private void RemoveUserFromChannels(UserSession userSession)
         {
-            var user = FindUser(userInfo.ConnectionId);
+            var user = FindUser(userSession.ConnectionId);
             if (user == null)
             {
-                AddActivity("Unable to find user {0} from channel {1} in order to remove user", userInfo.Username, userInfo.ChannelId);
+                AddActivity("Unable to find user {0} from channel {1} in order to remove user", userSession.UserInfo.Username, userSession.ChannelId);
                 return;
             }
 

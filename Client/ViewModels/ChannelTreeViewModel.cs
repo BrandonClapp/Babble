@@ -6,13 +6,13 @@ namespace Client.ViewModels
 {
     class ChannelTreeViewModel : ViewModelBase
     {
-        public ChannelTreeViewModel(List<Channel> channels)
+        public ChannelTreeViewModel(List<ChannelSession> channelSessions)
         {
             Channels = new ObservableCollection<ChannelViewModel>();
 
-            foreach (var channel in channels)
+            foreach (var channelSession in channelSessions)
             {
-                var channelVM = new ChannelViewModel(channel);
+                var channelVM = new ChannelViewModel(channelSession);
                 Channels.Add(channelVM);
             }
         }

@@ -8,7 +8,7 @@ namespace Babble.Core.Objects
 {
     public class ChatData
     {
-        public UserInfo UserInfo { get; set; }
+        public UserSession UserSession { get; set; }
         public string Data { get; set; }
     }
 }

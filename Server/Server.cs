@@ -17,7 +17,7 @@ namespace Server
         private readonly int Port = 8888;
         private readonly IPAddress IPAddress = IPAddress.Any;
         private List<NetworkClient> connectedClients = new List<NetworkClient>();
-        private List<Channel> channels = new List<Channel>();
+        private List<ChannelSession> channelSessions = new List<ChannelSession>();
         private Dictionary<MessageType, Action<NetworkClient, Message>> messageHandlers = new Dictionary<MessageType, Action<NetworkClient, Message>>();
 
         private DatabaseService databaseService = new DatabaseService();
@@ -81,10 +81,10 @@ namespace Server
 
         private void InitDefaultChannels()
         {
-            channels.Clear();
+            this.channelSessions.Clear();
 
-            var channelsFromDb = channelService.GetAllChannels();
-            channels.AddRange(channelsFromDb);
+            var channelSessions = channelService.GetAllChannels().Select(c => new ChannelSession(c));
+            this.channelSessions.AddRange(channelSessions);
         }
 
         private void ChatHandler(NetworkClient client, Message message)
@@ -100,20 +100,20 @@ namespace Server
         private void CredentialRequestHandler(NetworkClient client, Message message)
         {
             var credential = message.GetData<UserCredential>();
-            var userInfo = new UserInfo();
+            var userSession = new UserSession();
             var response = new UserCredentialResponse();
-            response.UserInfo = userInfo;
             // Handle credential authorization
             if (string.IsNullOrWhiteSpace(credential.Username))
             {
-                userInfo.ConnectionId = Guid.NewGuid();
-                userInfo.Username = "Anon#" + new Random().Next(5000);
-                client.ConnectedUser = userInfo;
+                userSession.ConnectionId = Guid.NewGuid();
+                userSession.UserInfo = new UserInfo() { Username = "Anon#" + new Random().Next(5000) };
+                response.UserSession = userSession;
+                client.UserSession = userSession;
 
                 response.IsAuthenticated = true;
                 response.Message = "Great success!";
-                AddUserToChannel(userInfo, 0);
-                BroadcastAll(client, Message.Create(MessageType.UserConnected, userInfo));
+                AddUserToChannel(userSession, 0);
+                BroadcastAll(client, Message.Create(MessageType.UserConnected, userSession));
             }
             else
             {
@@ -133,38 +133,39 @@ namespace Server
 
         private void GetAllChannelsRequestHandler(NetworkClient client, Message message)
         {
-            client.WriteMessage(Message.Create(MessageType.GetAllChannelsResponse, channels));
+            client.WriteMessage(Message.Create(MessageType.GetAllChannelsResponse, channelSessions));
         }
 
         private void UserChangeChannelRequestHandler(NetworkClient client, Message message)
         {
-            RemoveUserFromChannel(client.ConnectedUser);
+            RemoveUserFromChannel(client.UserSession);
 
             // todo: validation that the user can join target channel.
-            AddUserToChannel(client.ConnectedUser, (int)message.Data);
+            AddUserToChannel(client.UserSession, (int)message.Data);
 
-            BroadcastAll(client, Message.Create(MessageType.UserChangeChannelResponse, client.ConnectedUser), true);
+            BroadcastAll(client, Message.Create(MessageType.UserChangeChannelResponse, client.UserSession), true);
         }
 
         private void CreateChannelRequestHandler(NetworkClient client, Message message)
         {
             var channelToCreate = message.GetData<Channel>();
             var createdChannel = channelService.CreateChannel(channelToCreate.Name);
-            AddChannel(createdChannel);
-            BroadcastAll(client, Message.Create(MessageType.CreateChannelResponse, createdChannel), true);
+            var createdChannelSession = new ChannelSession(createdChannel);
+            AddChannel(createdChannelSession);
+            BroadcastAll(client, Message.Create(MessageType.CreateChannelResponse, createdChannelSession), true);
         }
 
         private void RenameChannelRequestHandler(NetworkClient client, Message message)
         {
             var channelFromRequest = message.GetData<Channel>();
-            var channelFromServer = channels.FirstOrDefault(c => c.Id == channelFromRequest.Id);
+            var channelFromServer = channelSessions.FirstOrDefault(c => c.Channel.Id == channelFromRequest.Id);
             if (channelFromServer == null)
             {
                 Console.WriteLine("Unable to find channel id {0} in server", channelFromRequest.Id);
                 return;
             }
             channelService.UpdateChannel(channelFromRequest); // ensure you can update in database first
-            channelFromServer.Name = channelFromRequest.Name; // then update the channel object currently serving
+            channelFromServer.Channel.Name = channelFromRequest.Name; // then update the channel object currently serving
             BroadcastAll(client, Message.Create(MessageType.RenameChannelResponse, channelFromRequest), true);
         }
 
@@ -178,22 +179,22 @@ namespace Server
                 return;
             }
 
-            var channelFromServer = channels.FirstOrDefault(c => c.Id == channelFromRequest.Id);
+            var channelFromServer = channelSessions.FirstOrDefault(c => c.Channel.Id == channelFromRequest.Id);
             if (channelFromServer == null)
             {
                 Console.WriteLine("Unable to find channel id {0} in server", channelFromRequest.Id);
                 return;
             }
 
-            channelService.DeleteChannel(channelFromServer.Id);
+            channelService.DeleteChannel(channelFromServer.Channel.Id);
 
-            foreach (var user in channelFromServer.Users)
+            foreach (var userSession in channelFromServer.UserSessions)
             {
-                AddUserToChannel(user, 0);
+                AddUserToChannel(userSession, 0);
             }
-            channels.Remove(channelFromServer);
+            channelSessions.Remove(channelFromServer);
 
-            BroadcastAll(client, Message.Create(MessageType.GetAllChannelsResponse, channels), true);
+            BroadcastAll(client, Message.Create(MessageType.GetAllChannelsResponse, channelSessions), true);
         }
 
         private void HandleConnectedClient(NetworkClient client)
@@ -218,40 +219,40 @@ namespace Server
             }
 
             // If the handler no longer running, do some clean up here
-            BroadcastAll(client, Message.Create(MessageType.UserDisconnected, client.ConnectedUser));
+            BroadcastAll(client, Message.Create(MessageType.UserDisconnected, client.UserSession));
             client.Disconnect();
             connectedClients.Remove(client);
 
             // refactor this
-            RemoveUserFromChannel(client.ConnectedUser);
-            Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.ConnectedUser.Username, connectedClients.Count);
+            RemoveUserFromChannel(client.UserSession);
+            Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.UserSession.UserInfo.Username, connectedClients.Count);
         }
 
-        private void AddChannel(Channel channel)
+        private void AddChannel(ChannelSession channel)
         {
-            channels.Add(channel);
+            channelSessions.Add(channel);
         }
 
-        private void AddUserToChannel(UserInfo userInfo, int target)
+        private void AddUserToChannel(UserSession userSession, int target)
         {
-            var channel = channels.FirstOrDefault(c => c.Id == target);
+            var channel = channelSessions.FirstOrDefault(c => c.Channel.Id == target);
             if (channel == null)
             {
                 // "Default Channel" configurable at a later time.
                 // for now, just the first one.
-                channels[0].AddUser(userInfo);
+                channelSessions[0].AddUser(userSession);
             }
             else
             {
-                channel.AddUser(userInfo);
+                channel.AddUser(userSession);
                 //channel.Users.Add(userInfo);
             }
         }
 
-        private void RemoveUserFromChannel(UserInfo userInfo)
+        private void RemoveUserFromChannel(UserSession userSession)
         {
-            var source = channels.Find(ch => ch.Id == userInfo.ChannelId);
-            var user = source.Users.Find(u => u.ConnectionId == userInfo.ConnectionId);
+            var source = channelSessions.Find(ch => ch.Channel.Id == userSession.ChannelId);
+            var user = source.UserSessions.Find(u => u.ConnectionId == userSession.ConnectionId);
             source.RemoveUser(user);
         }
 
@@ -262,8 +263,8 @@ namespace Server
 
         private void BroadcastChannel(NetworkClient sourceClient, Message message, bool includeSelf = false)
         {
-            var channelId = sourceClient.ConnectedUser.ChannelId;
-            var channel = channels.FirstOrDefault(c => c.Id == channelId);
+            var channelId = sourceClient.UserSession.ChannelId;
+            var channel = channelSessions.FirstOrDefault(c => c.Channel.Id == channelId);
             if (channel == null)
             {
                 Console.WriteLine("Unable to find channel id {0} to broadcast", channelId);
@@ -271,7 +272,7 @@ namespace Server
             }
 
             var targetClients = from client in connectedClients
-                                     join user in channel.Users on client.ConnectedUser.ConnectionId equals user.ConnectionId
+                                     join user in channel.UserSessions on client.UserSession.ConnectionId equals user.ConnectionId
                                      select client;
             
             if (targetClients.Any())
@@ -293,8 +294,8 @@ namespace Server
 
                     Console.WriteLine("Broadcasting: {0} from user {1} in channel {2}", 
                         message.Type, 
-                        sourceClient.ConnectedUser.Username,
-                        sourceClient.ConnectedUser.ChannelId);
+                        sourceClient.UserSession.UserInfo.Username,
+                        sourceClient.UserSession.ChannelId);
 
                     c.WriteMessage(message);
                 }

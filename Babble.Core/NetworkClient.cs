@@ -33,9 +33,8 @@ namespace Babble.Core
             return networkClient;
         }
 
-        public UserInfo ConnectedUser { get; set; }
-
         public bool IsConnected { get { return tcpClient.Connected; } }
+        public UserSession UserSession { get; set; }
 
         public void Disconnect()
         {

@@ -5,17 +5,17 @@ namespace Client.ViewModels
 {
     class UserInfoViewModel : ViewModelBase
     {
-        UserInfo userInfo;
+        UserSession userSession;
 
-        public UserInfoViewModel(UserInfo userInfo)
+        public UserInfoViewModel(UserSession userSession)
         {
-            this.userInfo = userInfo;
+            this.userSession = userSession;
         }
 
-        public int Id { get { return userInfo.Id; } }
-        public Guid ConnectionId { get { return userInfo.ConnectionId; } }
-        public string Username { get { return userInfo.Username; } }
-        public int ChannelId { get { return userInfo.ChannelId; } }
+        public int Id { get { return userSession.UserInfo.Id; } }
+        public Guid ConnectionId { get { return userSession.ConnectionId; } }
+        public string Username { get { return userSession.UserInfo.Username; } }
+        public int ChannelId { get { return userSession.ChannelId; } }
 
         private static readonly TimeSpan TalkingStopDelay = new TimeSpan(0, 0, 0, 0, 300);
         private bool _IsTalking;
