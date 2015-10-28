@@ -1,4 +1,4 @@
-﻿using Babble.Core;
+﻿using Babble.Core.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -267,7 +267,7 @@ namespace Client.ViewModels
             var userInfo = message.GetData<UserInfo>();
             foreach (var channel in ChannelTreeViewModel.Channels)
             {
-                channel.Users.Remove(channel.Users.FirstOrDefault(u => u.Id == userInfo.Id));
+                channel.Users.Remove(channel.Users.FirstOrDefault(u => u.ConnectionId == userInfo.ConnectionId));
             }
             AddActivity(string.Format("{0} Disconnected", userInfo.Username));
         }
@@ -277,7 +277,7 @@ namespace Client.ViewModels
             var voiceData = message.GetData<VoiceData>();
             client.PlaySound(voiceData.GetDataInBytes());
             var userInfo = voiceData.UserInfo;
-            var user = FindUser(userInfo.Id);
+            var user = FindUser(userInfo.ConnectionId);
             if (user == null)
             {
                 return;
@@ -310,7 +310,7 @@ namespace Client.ViewModels
         {
             var users = from c in ChannelTreeViewModel.Channels
                         from u in c.Users
-                        where u.Id == id
+                        where u.ConnectionId == id
                         select u;
 
             return users.FirstOrDefault();
@@ -338,10 +338,10 @@ namespace Client.ViewModels
 
         private void RemoveUserFromChannels(UserInfo userInfo)
         {
-            var user = FindUser(userInfo.Id);
+            var user = FindUser(userInfo.ConnectionId);
             if (user == null)
             {
-                AddActivity("Unable to find user {0} from channel {1} in order to remove user", user.Username, user.ChannelId);
+                AddActivity("Unable to find user {0} from channel {1} in order to remove user", userInfo.Username, userInfo.ChannelId);
                 return;
             }
 

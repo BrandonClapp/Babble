@@ -8,6 +8,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using System.Windows;
 using Babble.Core;
+using Babble.Core.Objects;
 using System.Threading.Tasks;
 
 namespace Client

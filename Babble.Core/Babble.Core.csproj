@@ -49,9 +49,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ISoundEngine.cs" />
-    <Compile Include="Message.cs" />
+    <Compile Include="Objects\Channel.cs" />
+    <Compile Include="Objects\ChatData.cs" />
+    <Compile Include="Objects\Message.cs" />
     <Compile Include="NAudioSoundEngine.cs" />
     <Compile Include="NetworkClient.cs" />
+    <Compile Include="Objects\MessageType.cs" />
+    <Compile Include="Objects\UserCredential.cs" />
+    <Compile Include="Objects\UserCredentialResponse.cs" />
+    <Compile Include="Objects\UserInfo.cs" />
+    <Compile Include="Objects\VoiceData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

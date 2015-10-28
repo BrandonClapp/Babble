@@ -1,4 +1,4 @@
-﻿using Babble.Core;
+﻿using Babble.Core.Objects;
 using System.Collections.ObjectModel;
 
 namespace Client.ViewModels

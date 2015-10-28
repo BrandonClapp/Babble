@@ -1,18 +1,19 @@
-﻿using Babble.Core;
+﻿using Babble.Core.Objects;
 using System;
 
 namespace Client.ViewModels
 {
     class UserInfoViewModel : ViewModelBase
     {
-        private UserInfo userInfo;
+        UserInfo userInfo;
 
         public UserInfoViewModel(UserInfo userInfo)
         {
             this.userInfo = userInfo;
         }
 
-        public Guid Id { get { return userInfo.Id; } }
+        public int Id { get { return userInfo.Id; } }
+        public Guid ConnectionId { get { return userInfo.ConnectionId; } }
         public string Username { get { return userInfo.Username; } }
         public int ChannelId { get { return userInfo.ChannelId; } }
 

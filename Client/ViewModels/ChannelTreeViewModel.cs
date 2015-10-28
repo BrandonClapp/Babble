@@ -1,4 +1,4 @@
-﻿using Babble.Core;
+﻿using Babble.Core.Objects;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 

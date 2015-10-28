@@ -1,4 +1,5 @@
 ﻿using Babble.Core;
+using Babble.Core.Objects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -105,7 +106,7 @@ namespace Server
             // Handle credential authorization
             if (string.IsNullOrWhiteSpace(credential.Username))
             {
-                userInfo.Id = Guid.NewGuid();
+                userInfo.ConnectionId = Guid.NewGuid();
                 userInfo.Username = "Anon#" + new Random().Next(5000);
                 client.ConnectedUser = userInfo;
 
@@ -250,7 +251,7 @@ namespace Server
         private void RemoveUserFromChannel(UserInfo userInfo)
         {
             var source = channels.Find(ch => ch.Id == userInfo.ChannelId);
-            var user = source.Users.Find(u => u.Id == userInfo.Id);
+            var user = source.Users.Find(u => u.ConnectionId == userInfo.ConnectionId);
             source.RemoveUser(user);
         }
 
@@ -270,7 +271,7 @@ namespace Server
             }
 
             var targetClients = from client in connectedClients
-                                     join user in channel.Users on client.ConnectedUser.Id equals user.Id
+                                     join user in channel.Users on client.ConnectedUser.ConnectionId equals user.ConnectionId
                                      select client;
             
             if (targetClients.Any())
