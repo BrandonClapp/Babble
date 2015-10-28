@@ -40,8 +40,8 @@ namespace Server.Dal
 create table Users
 (
     Id integer primary key autoincrement,
-    UserName varchar(50),
-    Password varchar(1024)
+    UserName varchar(50) not null unique,
+    Password varchar(1024) not null
 );
 
 create table Channels

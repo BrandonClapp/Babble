@@ -86,12 +86,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Dal\ChannelDal.cs" />
+    <Compile Include="Dal\UserDal.cs" />
     <Compile Include="Services\ChannelService.cs" />
     <Compile Include="Dal\Database.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Services\DatabaseService.cs" />
+    <Compile Include="Services\UserService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
