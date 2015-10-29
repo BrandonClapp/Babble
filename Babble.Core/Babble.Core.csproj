@@ -57,9 +57,10 @@
     <Compile Include="NetworkClient.cs" />
     <Compile Include="Objects\MessageType.cs" />
     <Compile Include="Objects\SimpleResponse.cs" />
-    <Compile Include="Objects\UserConnection.cs" />
+    <Compile Include="Objects\UserSession.cs" />
     <Compile Include="Objects\UserCredentialResponse.cs" />
     <Compile Include="Objects\UserInfo.cs" />
+    <Compile Include="Objects\UserStatus.cs" />
     <Compile Include="Objects\UserType.cs" />
     <Compile Include="Objects\VoiceData.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

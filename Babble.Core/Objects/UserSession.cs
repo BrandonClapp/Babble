@@ -12,5 +12,6 @@ namespace Babble.Core.Objects
         public bool Authenticated { get; set; }
         public int ChannelId { get; set; }
         public UserInfo UserInfo { get; set; }
+        public UserStatus UserStatus { get; set; }
     }
 }

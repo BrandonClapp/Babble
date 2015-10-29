@@ -34,6 +34,7 @@ namespace Client.ViewModels
             RenameChannelCommand = new DelegateCommand(RenameChannelCommandHandler);
             DeleteChannelCommand = new DelegateCommand(DeleteChannelCommandHandler);
             SendChatMessageCommand = new DelegateCommand(SendChatMessageCommandHandler);
+            SetStatusCommand = new DelegateCommand(SetStatusCommandHandler);
 
             messageHandlers.Add(MessageType.Chat, SomeUserChattingHandler);
             messageHandlers.Add(MessageType.Voice, SomeUserTalkingHandler);
@@ -44,6 +45,7 @@ namespace Client.ViewModels
             messageHandlers.Add(MessageType.RenameChannelResponse, ChannelRenamedHandler);
             messageHandlers.Add(MessageType.DeleteChannelResponse, ChannelDeletedHandler);
             messageHandlers.Add(MessageType.UserChangeChannelResponse, SomeUserChangedChannelHandler);
+            messageHandlers.Add(MessageType.UserChangeStatusResponse, SomeUserChangedStatusHandler);
         }
 
         // EVENT handling here
@@ -53,6 +55,7 @@ namespace Client.ViewModels
             if (successful)
             {
                 OnPropertyChanged(nameof(IsConnected));
+                OnPropertyChanged(nameof(LoggedInUserSession));
                 periodicUpdateTimer.Start();
                 AddActivity("Connected: Message From Host: {0}", responseMessage);
             }
@@ -104,7 +107,7 @@ namespace Client.ViewModels
             }
         }
 
-        public UserSession UserSession { get { return client.UserSession; } }
+        public UserSession LoggedInUserSession { get { return client.UserSession; } }
 
         private ChannelTreeViewModel _ChannelTreeViewModel;
         public ChannelTreeViewModel ChannelTreeViewModel
@@ -141,7 +144,7 @@ namespace Client.ViewModels
                 return;
             }
 
-            client.WriteMessage(Message.Create(MessageType.Chat, new ChatData() { UserSession = UserSession, Data = ChatMessage }));
+            client.WriteMessage(Message.Create(MessageType.Chat, new ChatData() { UserSession = LoggedInUserSession, Data = ChatMessage }));
             ChatMessage = string.Empty;
         }
 
@@ -217,6 +220,14 @@ namespace Client.ViewModels
             }
             var channel = GetSelectedChannel();
             client.WriteMessage(Message.Create(MessageType.DeleteChannelRequest, new Channel() { Id = channel.Id }));
+        }
+
+        public ICommand SetStatusCommand { get; private set; }
+        private void SetStatusCommandHandler(object state)
+        {
+            LoggedInUserSession.UserStatus = (UserStatus)state;
+            OnPropertyChanged(nameof(LoggedInUserSession));
+            client.WriteMessage(Message.Create(MessageType.UserChangeStatusRequest, LoggedInUserSession));
         }
 
         private void ChannelCreatedHandler(Message message)
@@ -295,8 +306,23 @@ namespace Client.ViewModels
         private void SomeUserChangedChannelHandler(Message message)
         {
             var userSession = message.GetData<UserSession>();
-            RemoveUserFromChannels(userSession);
-            AddUserToChannel(userSession);
+            var userVM = RemoveUserFromChannels(userSession);
+            userVM.ChannelId = userSession.ChannelId;
+            AddUserToChannel(userVM);
+            AddActivity("{0} joined channel {1}", userSession.UserInfo.Username, userSession.ChannelId);
+        }
+
+        private void SomeUserChangedStatusHandler(Message message)
+        {
+            var userSession = message.GetData<UserSession>();
+            var user = FindUser(userSession.ConnectionId);
+            if (user == null)
+            {
+                return;
+            }
+
+            user.UserStatus = userSession.UserStatus;
+            AddActivity("{0} changed status to {1}", user.Username, user.UserStatus);
         }
 
         public void AddActivity(string s, params object[] args)
@@ -323,31 +349,33 @@ namespace Client.ViewModels
             return users.ToList();
         }
 
-        private void AddUserToChannel(UserSession userSession)
+        private void AddUserToChannel(UserInfoViewModel userVM)
         {
-            var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userSession.ChannelId);
+            var channel = ChannelTreeViewModel.Channels.FirstOrDefault(c => c.Id == userVM.ChannelId);
             if (channel == null)
             {
                 AddActivity("Unable to find channel {0} to add the user to", channel.Id);
                 return;
             }
 
-            channel.Users.Add(new UserInfoViewModel(userSession));
+            channel.Users.Add(userVM);
         }
 
-        private void RemoveUserFromChannels(UserSession userSession)
+        private UserInfoViewModel RemoveUserFromChannels(UserSession userSession)
         {
             var user = FindUser(userSession.ConnectionId);
             if (user == null)
             {
                 AddActivity("Unable to find user {0} from channel {1} in order to remove user", userSession.UserInfo.Username, userSession.ChannelId);
-                return;
+                return null;
             }
 
             foreach (var channel in ChannelTreeViewModel.Channels)
             {
                 channel.Users.Remove(user);
             }
+
+            return user;
         }
 
         private ChannelViewModel GetSelectedChannel()

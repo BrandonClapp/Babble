@@ -14,8 +14,16 @@ namespace Client.ViewModels
 
         public int Id { get { return userSession.UserInfo.Id; } }
         public Guid ConnectionId { get { return userSession.ConnectionId; } }
-        public string Username { get { return userSession.UserInfo.Username; } }
-        public int ChannelId { get { return userSession.ChannelId; } }
+        public string Username { get { return userSession.UserInfo.Username; }}
+        public int ChannelId {
+            get { return userSession.ChannelId; }
+            set { userSession.ChannelId = value; OnPropertyChanged(nameof(ChannelId)); }
+        }
+        public UserStatus UserStatus
+        {
+            get { return userSession.UserStatus; }
+            set { userSession.UserStatus = value; OnPropertyChanged(nameof(UserStatus)); }
+        }
 
         private static readonly TimeSpan TalkingStopDelay = new TimeSpan(0, 0, 0, 0, 300);
         private bool _IsTalking;

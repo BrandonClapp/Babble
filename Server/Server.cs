@@ -120,6 +120,7 @@ namespace Server
             messageHandlers.Add(MessageType.RenameChannelRequest, RenameChannelRequestHandler);
             messageHandlers.Add(MessageType.DeleteChannelRequest, DeleteChannelRequestHandler);
             messageHandlers.Add(MessageType.CreateUserRequest, CreateUserRequestHandler);
+            messageHandlers.Add(MessageType.UserChangeStatusRequest, UserChangeStatusRequestHandler);
         }
 
         #region Handlers
@@ -271,6 +272,13 @@ namespace Server
                 client.WriteMessage(Message.Create(MessageType.CreateUserResponse,
                     new SimpleResponse() { Success = false, Message = ex.Message }));
             }
+        }
+
+        private void UserChangeStatusRequestHandler(NetworkClient client, Message message)
+        {
+            var userMessage = message.GetData<UserSession>();
+            client.UserSession.UserStatus = userMessage.UserStatus;
+            BroadcastAll(client, Message.Create(MessageType.UserChangeStatusResponse, client.UserSession), true);
         }
 
         #endregion
