@@ -9,11 +9,18 @@ namespace Server.Dal
 {
     class UserDal
     {
+        const string SelectUserSafeData = @"
+select
+    Id
+    ,Username
+    ,UserType
+from Users
+";
+
         public List<UserInfo> GetAllUsers()
         {
-            const string sql = @"
-select Id, UserName 
-from Users
+            string sql = $@"
+{SelectUserSafeData}
 ";
             using (var conn = Database.CreateConnection())
             {
@@ -24,28 +31,62 @@ from Users
 
         public UserInfo GetUser(int id)
         {
-            const string sql = @"
-select Id, UserName
-from Users
+            string sql = $@"
+{SelectUserSafeData}
 where Id = @id
 ";
             using (var conn = Database.CreateConnection())
             {
-                var channel = conn.Query<UserInfo>(sql, new { id = id }).FirstOrDefault();
-                return channel;
+                var user = conn.Query<UserInfo>(sql, new { id = id }).FirstOrDefault();
+                return user;
             }
         }
 
-        public int CreateUser(string userName, string password)
+        public UserInfo GetUserByUsername(string username)
+        {
+            string sql = $@"
+{SelectUserSafeData}
+where Username = @username
+";
+            using (var conn = Database.CreateConnection())
+            {
+                var user = conn.Query<UserInfo>(sql, new { username = username }).FirstOrDefault();
+                return user;
+            }
+        }
+
+        public UserCredential GetUserCredential(string username)
         {
             const string sql = @"
-insert into Users (UserName, Password) values (@name, @password);
+select UserName, Password, Salt
+from Users
+where Username = @username
+";
+            using (var conn = Database.CreateConnection())
+            {
+                var user = conn.Query<UserCredential>(sql, new { username = username }).FirstOrDefault();
+                return user;
+            }
+        }
+
+        public int CreateUser(string username, string hashedPassword, string salt, UserType userType)
+        {
+            const string sql = @"
+insert into Users 
+(Username, Password, Salt, UserType) 
+values (@username, @password, @salt, @userType);
 select last_insert_rowid() from Users;
 ";
             using (var conn = Database.CreateConnection())
             {
                 var createdChannelId = conn.Query<int>(sql, 
-                    new { userName = userName, password = password}).First();
+                    new
+                    {
+                        username = username,
+                        password = hashedPassword,
+                        salt = salt,
+                        userType = userType
+                    }).First();
                 return createdChannelId;
             }
         }
@@ -65,20 +106,6 @@ where Id = @id;
             using (var conn = Database.CreateConnection())
             {
                 conn.Execute(sql, new { id = id });
-            }
-        }
-
-        public bool IsUserAuthenticated(string userName, string password)
-        {
-            const string sql = @"
-select top 1 *
-from Users
-where UserName = @userName and Password = @password
-";
-            using (var conn = Database.CreateConnection())
-            {
-                var result = conn.Query<int>(sql, new { userName = userName, password = password }).First();
-                return result > 0 ? true : false;
             }
         }
     }

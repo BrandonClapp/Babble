@@ -107,55 +107,48 @@ namespace Server
                 if (string.IsNullOrWhiteSpace(credential.Username))
                 {
                     var userSession = new UserSession();
-                    userSession.ConnectionId = Guid.NewGuid();
-                    userSession.UserInfo = new UserInfo() { Username = "Anon#" + new Random().Next(5000) };
-                    client.UserSession = userSession;
-                    AddUserToChannel(userSession, 0);
-
-                    var response = CreateCredentialSuccessResponse(userSession);
-                    BroadcastAll(client, Message.Create(MessageType.UserConnected, userSession));
-                    client.WriteMessage(Message.Create(MessageType.CredentialResponse, response));
+                    userSession.UserInfo = new UserInfo() { Username = "Anon#" + new Random().Next(10000) };
+                    CredentialRequestHandlerSuccess(client, userSession);
                 }
-                else if (userService.IsUserAuthenticated(credential.Username, credential.Password))
+
+                if (userService.IsUserAuthenticated(credential.Username, credential.Password))
                 {
                     var userSession = new UserSession();
-                    userSession.ConnectionId = Guid.NewGuid();
-                    userSession.UserInfo = new UserInfo() { Username = "Anon#" + new Random().Next(5000) };
-                    client.UserSession = userSession;
-                    AddUserToChannel(userSession, 0);
+                    userSession.UserInfo = userService.GetUserByUsername(credential.Username);
+                    CredentialRequestHandlerSuccess(client, userSession);
+                }
 
-                    var response = CreateCredentialSuccessResponse(userSession);
-                    BroadcastAll(client, Message.Create(MessageType.UserConnected, userSession));
-                    client.WriteMessage(Message.Create(MessageType.CredentialResponse, response));
-                }
-                else
-                {
-                    var response = CreateCredentialFailResponse();
-                    client.WriteMessage(Message.Create(MessageType.CredentialResponse, response));
-                }
+
+                CredentialRequestHandlerFail(client);
             }
-            catch
+            catch (Exception ex)
             {
-                var response = CreateCredentialFailResponse();
-                client.WriteMessage(Message.Create(MessageType.CredentialResponse, response));
+                Console.WriteLine(ex.Message);
+                CredentialRequestHandlerFail(client);
             }
         }
 
-        private UserCredentialResponse CreateCredentialSuccessResponse(UserSession userSession)
+        private void CredentialRequestHandlerSuccess(NetworkClient client, UserSession userSession)
         {
+
+            userSession.ConnectionId = Guid.NewGuid();
+            client.UserSession = userSession;
+            AddUserToChannel(userSession, 0);
+
             var response = new UserCredentialResponse();
             response.UserSession = userSession;
             response.IsAuthenticated = true;
             response.Message = "Great success!";
-            return response;
+            BroadcastAll(client, Message.Create(MessageType.UserConnected, userSession));
+            client.WriteMessage(Message.Create(MessageType.CredentialResponse, response));
         }
 
-        private UserCredentialResponse CreateCredentialFailResponse()
+        private void CredentialRequestHandlerFail(NetworkClient client)
         {
             var response = new UserCredentialResponse();
             response.IsAuthenticated = false;
-            response.Message = "Brandon fix this!";
-            return response;
+            response.Message = "Authentication failed. Either invalid username or password";
+            client.WriteMessage(Message.Create(MessageType.CredentialResponse, response));
         }
 
         private void HelloHandler(NetworkClient client, Message message)

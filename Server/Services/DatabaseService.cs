@@ -1,4 +1,5 @@
-﻿using Server.Dal;
+﻿using Babble.Core.Objects;
+using Server.Dal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace Server.Services
 {
     class DatabaseService
     {
+        UserService userService = new UserService();
         /// <summary>
         /// If database already existed, do nothing
         /// If not, create a new default one
@@ -21,6 +23,7 @@ namespace Server.Services
             }
 
             Database.CreateDefaultDatabase();
+            userService.CreateUser("admin", "123", UserType.Admin);
         }
     }
 }

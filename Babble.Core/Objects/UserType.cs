@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Babble.Core.Objects
 {
-    public class UserCredential
+    public enum UserType
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
-        public string Salt { get; set; }
+        Regular,
+        Mod,
+        Admin
     }
 }
