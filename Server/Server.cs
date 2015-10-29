@@ -257,7 +257,9 @@ namespace Server
 
             // refactor this
             RemoveUserFromChannel(client.UserSession);
-            Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", client.UserSession.UserInfo.Username, connectedClients.Count);
+            Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", 
+                client.UserSession == null ? "<unknown user>" : client.UserSession.UserInfo.Username, 
+                connectedClients.Count);
         }
 
         private void AddChannel(ChannelSession channel)
@@ -283,8 +285,18 @@ namespace Server
 
         private void RemoveUserFromChannel(UserSession userSession)
         {
-            var source = channelSessions.Find(ch => ch.Channel.Id == userSession.ChannelId);
-            var user = source.UserSessions.Find(u => u.ConnectionId == userSession.ConnectionId);
+            if (userSession == null)
+            {
+                return;
+            }
+
+            var source = channelSessions.FirstOrDefault(ch => ch.Channel.Id == userSession.ChannelId);
+            if (source == null)
+            {
+                Console.WriteLine("RemoveUserFromChannel: unable to find channel session id {0}", userSession.ChannelId);
+                return;
+            }
+            var user = source.UserSessions.FirstOrDefault(u => u.ConnectionId == userSession.ConnectionId);
             source.RemoveUser(user);
         }
 

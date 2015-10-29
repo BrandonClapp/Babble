@@ -58,7 +58,7 @@ namespace Client.ViewModels
             }
             else
             {
-                System.Windows.MessageBox.Show("Could not connect to host. Error: {0}", responseMessage);
+                System.Windows.MessageBox.Show(string.Format("Could not connect to host. Error: {0}", responseMessage));
             }
         }
 
