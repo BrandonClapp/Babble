@@ -56,8 +56,8 @@
     <Compile Include="NAudioSoundEngine.cs" />
     <Compile Include="NetworkClient.cs" />
     <Compile Include="Objects\MessageType.cs" />
+    <Compile Include="Objects\SimpleResponse.cs" />
     <Compile Include="Objects\UserConnection.cs" />
-    <Compile Include="Objects\UserCredential.cs" />
     <Compile Include="Objects\UserCredentialResponse.cs" />
     <Compile Include="Objects\UserInfo.cs" />
     <Compile Include="Objects\UserType.cs" />

@@ -108,7 +108,7 @@ namespace Client
             }
 
             networkClient = NetworkClient.Connect(host, port);
-            networkClient.WriteMessage(Message.Create(MessageType.CredentialRequest, new UserCredential() { Username = username, Password = password }));
+            networkClient.WriteMessage(Message.Create(MessageType.CredentialRequest, new UserInfo() { Username = username, Password = password }));
             var response = networkClient.ReadMessage().GetData<UserCredentialResponse>();
             if (response.IsAuthenticated)
             {

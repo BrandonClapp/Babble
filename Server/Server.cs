@@ -32,11 +32,26 @@ namespace Server
             InitDefaultChannels();
         }
 
+        private void InitDatabase()
+        {
+            databaseService.InitDatabase();
+        }
+
+        private void InitDefaultChannels()
+        {
+            this.channelSessions.Clear();
+
+            var channelSessions = channelService.GetAllChannels().Select(c => new ChannelSession(c));
+            this.channelSessions.AddRange(channelSessions);
+        }
+
         public void Start()
         {
-
             TcpListener listener = new TcpListener(IPAddress, Port);
             listener.Start();
+
+            Console.WriteLine("Server is running, good luck!");
+
             while (true)
             {
                 var client = new NetworkClient(listener.AcceptTcpClient());
@@ -59,7 +74,38 @@ namespace Server
             }
         }
 
-        
+        private void HandleConnectedClient(NetworkClient client)
+        {
+            while (client.IsConnected)
+            {
+                var message = client.ReadMessage();
+                if (message == null)
+                {
+                    break;
+                }
+
+                Action<NetworkClient, Message> handler = null;
+                messageHandlers.TryGetValue(message.Type, out handler);
+                if (handler == null)
+                {
+                    Console.WriteLine("Error, unable to find a message handler for message type: {0}", message.Type);
+                    continue;
+                }
+
+                handler(client, message);
+            }
+
+            // If the handler no longer running, do some clean up here
+            BroadcastAll(client, Message.Create(MessageType.UserDisconnected, client.UserSession));
+            client.Disconnect();
+            connectedClients.Remove(client);
+
+            // refactor this
+            RemoveUserFromChannel(client.UserSession);
+            Console.WriteLine("User Disconnected: {0}, now you have {1} users connected",
+(object)(client.UserSession == null ? "<unknown user>" : client.UserSession.UserInfo.Username),
+                connectedClients.Count);
+        }
 
         private void InitMessageHandlers()
         {
@@ -73,20 +119,10 @@ namespace Server
             messageHandlers.Add(MessageType.CreateChannelRequest, CreateChannelRequestHandler);
             messageHandlers.Add(MessageType.RenameChannelRequest, RenameChannelRequestHandler);
             messageHandlers.Add(MessageType.DeleteChannelRequest, DeleteChannelRequestHandler);
+            messageHandlers.Add(MessageType.CreateUserRequest, CreateUserRequestHandler);
         }
 
-        private void InitDatabase()
-        {
-            databaseService.InitDatabase();
-        }
-
-        private void InitDefaultChannels()
-        {
-            this.channelSessions.Clear();
-
-            var channelSessions = channelService.GetAllChannels().Select(c => new ChannelSession(c));
-            this.channelSessions.AddRange(channelSessions);
-        }
+        #region Handlers
 
         private void ChatHandler(NetworkClient client, Message message)
         {
@@ -102,7 +138,7 @@ namespace Server
         {
             try
             {
-                var credential = message.GetData<UserCredential>();
+                var credential = message.GetData<UserInfo>();
                 // Handle credential authorization
                 if (string.IsNullOrWhiteSpace(credential.Username))
                 {
@@ -222,38 +258,24 @@ namespace Server
             BroadcastAll(client, Message.Create(MessageType.GetAllChannelsResponse, channelSessions), true);
         }
 
-        private void HandleConnectedClient(NetworkClient client)
+        private void CreateUserRequestHandler(NetworkClient client, Message message)
         {
-            while (client.IsConnected)
+            try
             {
-                var message = client.ReadMessage();
-                if (message == null)
-                {
-                    break;
-                }
-
-                Action<NetworkClient, Message> handler = null;
-                messageHandlers.TryGetValue(message.Type, out handler);
-                if (handler == null)
-                {
-                    Console.WriteLine("Error, unable to find a message handler for message type: {0}", message.Type);
-                    continue;
-                }
-
-                handler(client, message);
+                userService.CreateUser(message.GetData<UserInfo>());
+                client.WriteMessage(Message.Create(MessageType.CreateUserResponse,
+                    new SimpleResponse() { Success = true, Message = "User created" }));
             }
-
-            // If the handler no longer running, do some clean up here
-            BroadcastAll(client, Message.Create(MessageType.UserDisconnected, client.UserSession));
-            client.Disconnect();
-            connectedClients.Remove(client);
-
-            // refactor this
-            RemoveUserFromChannel(client.UserSession);
-            Console.WriteLine("User Disconnected: {0}, now you have {1} users connected", 
-                client.UserSession == null ? "<unknown user>" : client.UserSession.UserInfo.Username, 
-                connectedClients.Count);
+            catch (Exception ex)
+            {
+                client.WriteMessage(Message.Create(MessageType.CreateUserResponse,
+                    new SimpleResponse() { Success = false, Message = ex.Message }));
+            }
         }
+
+        #endregion
+
+        #region Helpers
 
         private void AddChannel(ChannelSession channel)
         {
@@ -320,7 +342,7 @@ namespace Server
 
         private void Broadcast(NetworkClient sourceClient, List<NetworkClient> targetClients, Message message, bool includeSelf = false)
         {
-            Parallel.ForEach(targetClients, (c) =>
+            Parallel.ForEach(targetClients, (Action<NetworkClient>)((c) =>
             {
                 try
                 {
@@ -331,7 +353,7 @@ namespace Server
 
                     Console.WriteLine("Broadcasting: {0} from user {1} in channel {2}", 
                         message.Type, 
-                        sourceClient.UserSession.UserInfo.Username,
+(object)sourceClient.UserSession.UserInfo.Username,
                         sourceClient.UserSession.ChannelId);
 
                     c.WriteMessage(message);
@@ -340,7 +362,9 @@ namespace Server
                 {
                     Console.WriteLine(ex.Message);
                 }
-            });
+            }));
         }
+
+        #endregion
     }
 }

@@ -55,7 +55,7 @@ where Username = @username
             }
         }
 
-        public UserCredential GetUserCredential(string username)
+        public UserInfo GetUserCredential(string username)
         {
             const string sql = @"
 select UserName, Password, Salt
@@ -64,12 +64,12 @@ where Username = @username
 ";
             using (var conn = Database.CreateConnection())
             {
-                var user = conn.Query<UserCredential>(sql, new { username = username }).FirstOrDefault();
+                var user = conn.Query<UserInfo>(sql, new { username = username }).FirstOrDefault();
                 return user;
             }
         }
 
-        public int CreateUser(string username, string hashedPassword, string salt, UserType userType)
+        public int CreateUser(UserInfo userInfo)
         {
             const string sql = @"
 insert into Users 
@@ -82,10 +82,10 @@ select last_insert_rowid() from Users;
                 var createdChannelId = conn.Query<int>(sql, 
                     new
                     {
-                        username = username,
-                        password = hashedPassword,
-                        salt = salt,
-                        userType = userType
+                        username = userInfo.Username,
+                        password = userInfo.Password,
+                        salt = userInfo.Salt,
+                        userType = userInfo.UserType
                     }).First();
                 return createdChannelId;
             }

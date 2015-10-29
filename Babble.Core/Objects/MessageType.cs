@@ -25,6 +25,8 @@ namespace Babble.Core.Objects
         UserConnected,
         UserDisconnected,
         UserChangeChannelRequest,  // maybe this should be renamed
-        UserChangeChannelResponse
+        UserChangeChannelResponse,
+        CreateUserRequest,
+        CreateUserResponse
     }
 }
