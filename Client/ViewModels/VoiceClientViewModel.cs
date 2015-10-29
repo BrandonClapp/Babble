@@ -156,7 +156,7 @@ namespace Client.ViewModels
                     var host = ncw.Host;
                     var port = ncw.Port;
                     AddActivity("Attempting to connect to {0} : {1}", host, port);
-                    client.Connect(host, port, ncw.Username, ncw.Password);
+                    client.Connect(host, port, ncw.Username, ncw.Password, ncw.CreateNewUserCheckBox.IsChecked ?? false);
                 }
                 catch (Exception ex)
                 {

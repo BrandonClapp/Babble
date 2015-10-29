@@ -1,18 +1,19 @@
 ﻿<Window x:Name="NewConnectionWindow1" x:Class="Client.NewConnectionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="New Connection" Height="246" Width="273">
+        Title="New Connection" Height="286" Width="261">
     <Grid>
         <TextBox x:Name="HostTextBox" HorizontalAlignment="Left" Height="23" Margin="93,37,0,0" TextWrapping="Wrap" Text="127.0.0.1" VerticalAlignment="Top" Width="120"/>
         <Label x:Name="HostLabel" Content="Host / IP:" HorizontalAlignment="Left" Margin="30,35,0,0" VerticalAlignment="Top"/>
         <Label x:Name="PortLabel" Content="Port:" HorizontalAlignment="Left" Margin="53,66,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="PortTextBox" HorizontalAlignment="Left" Height="23" Margin="93,69,0,0" TextWrapping="Wrap" Text="8888" VerticalAlignment="Top" Width="120"/>
-        <Button Content="Connect" HorizontalAlignment="Left" Margin="138,179,0,0" VerticalAlignment="Top" Width="75" IsDefault="True" Click="Button_Click"/>
+        <Button Content="Connect" HorizontalAlignment="Left" Margin="138,206,0,0" VerticalAlignment="Top" Width="75" IsDefault="True" Click="Button_Click" Height="25"/>
         <Label x:Name="UsernameLabel" Content="Username:" HorizontalAlignment="Left" Margin="22,97,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="UsernameTextBox" HorizontalAlignment="Left" Height="23" Margin="93,97,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"/>
         <Label Content="Password:" HorizontalAlignment="Left" Margin="25,125,0,0" VerticalAlignment="Top"/>
         <PasswordBox x:Name="PasswordBox" HorizontalAlignment="Left" Margin="93,125,0,0" VerticalAlignment="Top" Width="120" Height="23"/>
         <CheckBox x:Name="LoginAsAnonymousCheckBox" Content="Login as Anonymous" HorizontalAlignment="Left" Margin="93,153,0,0" VerticalAlignment="Top" Click="LoginAsAnonymous_Click"/>
+        <CheckBox x:Name="CreateNewUserCheckBox" Content="Create New User" HorizontalAlignment="Left" Margin="93,173,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>

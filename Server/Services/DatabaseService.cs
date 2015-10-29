@@ -23,7 +23,12 @@ namespace Server.Services
             }
 
             Database.CreateDefaultDatabase();
-            userService.CreateUser("admin", "123", UserType.Admin);
+            userService.CreateUser(new UserInfo()
+            {
+                Username = "admin",
+                Password = "123",
+                UserType = UserType.Admin
+            });
         }
     }
 }

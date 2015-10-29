@@ -44,6 +44,11 @@ namespace Client
         {
             this.UsernameTextBox.IsEnabled = !LoginAsAnonymousCheckBox.IsChecked.Value;
             this.PasswordBox.IsEnabled = !LoginAsAnonymousCheckBox.IsChecked.Value;
+            this.CreateNewUserCheckBox.IsEnabled = !LoginAsAnonymousCheckBox.IsChecked.Value;
+            if (LoginAsAnonymousCheckBox.IsChecked == true)
+            {
+                this.CreateNewUserCheckBox.IsChecked = false;
+            }
         }
     }
 }

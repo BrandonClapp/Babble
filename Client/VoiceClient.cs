@@ -99,7 +99,7 @@ namespace Client
             }
         }
 
-        public void Connect(string host, int port, string username, string password)
+        public void Connect(string host, int port, string username, string password, bool createNewUser)
 
         {
             if (networkClient != null)
@@ -108,6 +108,23 @@ namespace Client
             }
 
             networkClient = NetworkClient.Connect(host, port);
+
+            if (createNewUser)
+            {
+                networkClient.WriteMessage(Message.Create(MessageType.CreateUserRequest,
+                    new UserInfo()
+                    {
+                        Username = username,
+                        Password = password
+                    }));
+                var createUserResponse = networkClient.ReadMessage().GetData<SimpleResponse>();
+                if (!createUserResponse.Success)
+                {
+                    OnConnected(false, createUserResponse.Message);
+                    return;
+                }
+            }
+
             networkClient.WriteMessage(Message.Create(MessageType.CredentialRequest, new UserInfo() { Username = username, Password = password }));
             var response = networkClient.ReadMessage().GetData<UserCredentialResponse>();
             if (response.IsAuthenticated)

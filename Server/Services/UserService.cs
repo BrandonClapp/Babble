@@ -75,24 +75,42 @@ namespace Server.Services
             }
         }
 
-        public void CreateUser(string username, string password, UserType userType)
+        public void CreateUser(UserInfo userInfo)
         {
-            if (string.IsNullOrWhiteSpace(username))
+            if (userInfo == null)
             {
-                throw new ArgumentNullException(nameof(username));
+                throw new ArgumentNullException(nameof(userInfo));
             }
-            if (string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(userInfo.Username))
             {
-                throw new ArgumentNullException(nameof(password));
+                throw new ArgumentNullException(nameof(userInfo.Username));
+            }
+
+            if (string.IsNullOrWhiteSpace(userInfo.Password))
+            {
+                throw new ArgumentNullException(nameof(userInfo.Password));
+            }
+
+            if (UsernameExists(userInfo.Username))
+            {
+                throw new Exception("Username already exists, please enter a different username");
             }
 
             using (var shazam = new SHA512Managed())
             {
                 var salt = GenerateSaltValue();
-                var passwordAndSalt = password + salt;
+                var passwordAndSalt = userInfo.Password + salt;
                 var hashedPassword = Encoding.UTF8.GetString(shazam.ComputeHash(Encoding.UTF8.GetBytes(passwordAndSalt)));
-                userDal.CreateUser(username, hashedPassword, salt, userType);
+                userInfo.Password = hashedPassword;
+                userInfo.Salt = salt;
+                userDal.CreateUser(userInfo);
             }
+        }
+
+        private bool UsernameExists(string username)
+        {
+            var user = GetUserByUsername(username);
+            return user != null;
         }
     }
 }
