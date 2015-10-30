@@ -11,6 +11,7 @@ namespace Client.ViewModels
     class VoiceClientViewModel : ViewModelBase
     {
         VoiceClient client = new VoiceClient();
+        MyConfig config = MyConfig.Load();
         System.Windows.Threading.Dispatcher dispatcher = System.Windows.Application.Current.Dispatcher;
         // periodic update GUI property that is timer based
         // so one of them is the talking status
@@ -21,9 +22,11 @@ namespace Client.ViewModels
   
         public VoiceClientViewModel()
         {
+            client.TalkVKey = System.Windows.Input.KeyInterop.VirtualKeyFromKey(config.TalkKey);
+
             client.Connected += Client_Connected;
             client.Disconnected += Client_Disconnected;
-            client.MessageReceived += Client_MessageReceived; ;
+            client.MessageReceived += Client_MessageReceived;
 
             periodicUpdateTimer.Elapsed += PeriodicUpdateTimer_Elapsed;
 
@@ -35,6 +38,7 @@ namespace Client.ViewModels
             DeleteChannelCommand = new DelegateCommand(DeleteChannelCommandHandler);
             SendChatMessageCommand = new DelegateCommand(SendChatMessageCommandHandler);
             SetStatusCommand = new DelegateCommand(SetStatusCommandHandler);
+            OpenConfigCommand = new DelegateCommand(OpenConfigCommandHandler);
 
             messageHandlers.Add(MessageType.Chat, SomeUserChattingHandler);
             messageHandlers.Add(MessageType.Voice, SomeUserTalkingHandler);
@@ -228,6 +232,16 @@ namespace Client.ViewModels
             LoggedInUserSession.UserStatus = (UserStatus)state;
             OnPropertyChanged(nameof(LoggedInUserSession));
             client.WriteMessage(Message.Create(MessageType.UserChangeStatusRequest, LoggedInUserSession));
+        }
+
+        public ICommand OpenConfigCommand { get; private set; }
+        private void OpenConfigCommandHandler(object state)
+        {
+            var window = new ConfigWindow(System.Windows.Application.Current.MainWindow, config);
+            if (window.ShowDialog() == true)
+            {
+                client.TalkVKey = System.Windows.Input.KeyInterop.VirtualKeyFromKey(config.TalkKey);
+            }
         }
 
         private void ChannelCreatedHandler(Message message)

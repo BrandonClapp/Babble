@@ -31,10 +31,11 @@ namespace Client
 
         public UserSession UserSession { get { return networkClient == null ? null : networkClient.UserSession; } }
         public bool IsConnected { get { return networkClient == null ? false : networkClient.IsConnected; } }
+        public int TalkVKey { get; set; }
 
         private void SoundEngineRecordCallback(byte[] data)
         {
-            if (GetAsyncKeyState(0x11) == 0 || !IsConnected) return;
+            if (GetAsyncKeyState(TalkVKey) == 0 || !IsConnected) return;
             var voiceData = new VoiceData();
             voiceData.UserSession = UserSession;
             voiceData.SetDataFromBytes(data);

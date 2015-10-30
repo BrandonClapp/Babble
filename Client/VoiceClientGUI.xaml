@@ -46,6 +46,9 @@
                 <MenuItem Header="Away" Command="{Binding SetStatusCommand}" CommandParameter="{x:Static object:UserStatus.Away}"/>
                 <MenuItem Header="Busy" Command="{Binding SetStatusCommand}" CommandParameter="{x:Static object:UserStatus.Busy}"/>
             </MenuItem>
+            <MenuItem Header="Tools">
+                <MenuItem Header="Config" Command="{Binding OpenConfigCommand}"/>
+            </MenuItem>
         </Menu>
 
         <Grid Grid.Row="1">
