@@ -11,7 +11,7 @@ using System.Linq;
 using Client.ViewModels;
 using System.Windows.Input;
 
-namespace Client
+namespace Client.Views
 {
     /// <summary>
     /// Provides access to UI elements and binding to the VoiceClientViewModel

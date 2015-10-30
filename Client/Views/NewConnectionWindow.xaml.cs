@@ -16,7 +16,7 @@ using System.Windows.Shapes;
 using System.Net;
 using System.Diagnostics;
 
-namespace Client
+namespace Client.Views
 {
     /// <summary>
     /// Interaction logic for NewConnectionWindow.xaml

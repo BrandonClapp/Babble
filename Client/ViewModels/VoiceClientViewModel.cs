@@ -1,4 +1,5 @@
 ﻿using Babble.Core.Objects;
+using Client.Views;
 using System;
 using System.Collections.Generic;
 using System.Linq;

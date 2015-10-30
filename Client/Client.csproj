@@ -51,7 +51,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>images\headset_icon.ico</ApplicationIcon>
+    <ApplicationIcon>Images\headset_icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Accessibility" />
@@ -85,15 +85,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="ConfigWindow.xaml.cs">
+    <Compile Include="Views\ConfigWindow.xaml.cs">
       <DependentUpon>ConfigWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="DelegateCommand.cs" />
     <Compile Include="MyConfig.cs" />
-    <Compile Include="NewChannelWindow.xaml.cs">
+    <Compile Include="Views\NewChannelWindow.xaml.cs">
       <DependentUpon>NewChannelWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="RenameChannelWindow.xaml.cs">
+    <Compile Include="Views\RenameChannelWindow.xaml.cs">
       <DependentUpon>RenameChannelWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="ViewModels\ChannelTreeViewModel.cs" />
@@ -102,19 +102,19 @@
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\VoiceClientViewModel.cs" />
     <Compile Include="VoiceClient.cs" />
-    <Page Include="ConfigWindow.xaml">
+    <Page Include="Views\ConfigWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="NewChannelWindow.xaml">
+    <Page Include="Views\NewChannelWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="RenameChannelWindow.xaml">
+    <Page Include="Views\RenameChannelWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="VoiceClientGUI.xaml">
+    <Page Include="Views\VoiceClientGUI.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -122,17 +122,17 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="VoiceClientGUI.xaml.cs">
+    <Compile Include="Views\VoiceClientGUI.xaml.cs">
       <DependentUpon>VoiceClientGUI.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="NewConnectionWindow.xaml">
+    <Page Include="Views\NewConnectionWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NewConnectionWindow.xaml.cs">
+    <Compile Include="Views\NewConnectionWindow.xaml.cs">
       <DependentUpon>NewConnectionWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -180,11 +180,11 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="images\headset_icon.ico" />
+    <Resource Include="Images\headset_icon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="images\talk_active.png" />
-    <Resource Include="images\talk_inactive.png" />
+    <Resource Include="Images\talk_active.png" />
+    <Resource Include="Images\talk_inactive.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Babble.Core\Babble.Core.csproj">
