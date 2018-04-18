@@ -272,7 +272,6 @@ namespace Client.ViewModels
         {
             var channels = message.GetData<List<ChannelSession>>();
             ChannelTreeViewModel = new ChannelTreeViewModel(channels);
-            AddActivity("Ain't nobody dope as me I'm dressed so fresh so clean");
         }
 
         private void SomeUserConnectedHandler(Message message)
